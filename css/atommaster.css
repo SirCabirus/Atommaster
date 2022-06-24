@@ -1,0 +1,71 @@
+/* Google Font einbinden                  */
+/* Auswahl über https://fonts.google.com/ */
+@import url('https://fonts.googleapis.com/css2?family=Goldman&display=swap');
+
+body {
+    background-color: rgb(232, 232, 246);
+  }
+
+td.white {
+    background-color: antiquewhite;
+    width: 64px;
+    height: 64px;
+    text-align: center;
+}
+
+td.black {
+    background-color: rgb(220, 172, 109);
+    width: 64px;
+    height: 64px;
+    text-align: center;
+}
+
+td.rim {
+    background-color: rgb(41, 70, 55);
+
+    color: aliceblue;
+    font-weight: bold;
+    width: 64px;
+    height: 64px;
+    text-align: center;
+}
+
+td.bg {
+    background-color: rgb(191, 210, 207);
+    width: 64px;
+    height: 64px;
+    text-align: center;
+}
+
+table {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+h1 {
+    text-align: center;
+    color:rgb(50, 65, 52);
+    font-family: 'Goldman';
+    font-size: 40px;
+    font-weight: bold;
+}
+
+.center {
+    background-color: rgb(191, 210, 207);
+    margin: auto;
+    text-align: center;
+    width: 685px;
+    border: 3px solid green;
+    padding: 10px;
+  }
+
+.textbox {
+    font-family: 'Goldman', cursive;
+    width: 800;
+    text-align:center;
+    font-size: 22px;
+    font-weight: bold;
+    color:rgb(50, 65, 52);
+    background-color: antiquewhite;
+    padding: 1px;
+}
