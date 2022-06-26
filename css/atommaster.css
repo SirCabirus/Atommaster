@@ -22,9 +22,6 @@ td.black {
 
 td.rim {
     background-color: rgb(41, 70, 55);
-
-    color: aliceblue;
-    font-weight: bold;
     width: 64px;
     height: 64px;
     text-align: center;
@@ -50,10 +47,9 @@ h1 {
     font-weight: bold;
 }
 
-.center {
+.gamebox {
     background-color: rgb(191, 210, 207);
     margin: auto;
-    text-align: center;
     width: 685px;
     border: 3px solid green;
     padding: 10px;
@@ -61,7 +57,6 @@ h1 {
 
 .textbox {
     font-family: 'Goldman', cursive;
-    width: 800;
     text-align:center;
     font-size: 22px;
     font-weight: bold;
