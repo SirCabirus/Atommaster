@@ -4,7 +4,7 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 0.23                           */
+/* Version 0.24                           */
 /* 26.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
@@ -21,8 +21,11 @@ let mockup = true;
 // sollen die Orbs in zufälliger Reihenfolge ausgegeben werden
 let randomOrbs = true;
 
-// soll der Cursor blinken
-let flashTheCursor = false;
+// ist der Cursor blockiert
+let cursorBlocked = false;
+
+// Dauer einer Cursor-Blockade in ms
+const cursorBlockedDuration = 2000;
 
 // Speicher der genutzten Orbs
 let orbsUsed = [];
@@ -62,9 +65,6 @@ let gamestatus;
 let updateHandle;
 let updateIntervall = 100;
 
-let flashCursorHandle;
-let flashCursorIntervall = 1000;
-
 // Grafiken
 let questionMarks = [
   '<img src="img/questionMarkBlue.png">',
@@ -98,7 +98,7 @@ let orbs = [
 ];
 
 // fünf Leerzeichen
-const space = "\xa0\xa0\xa0\xa0\xa0"; 
+const space = "\xa0\xa0\xa0\xa0\xa0";
 
 // Variablen für die Tastatureingaben
 let KEY_RIGHT = false; // die 'Pfeil nach rechts' Cursor-Taste
@@ -113,6 +113,10 @@ let KEY_ENTER = false; // die Eingabe-Taste
 /**********************************/
 document.onkeydown = function (e) {
   // console.log(">" + e.key + "<");
+  if (cursorBlocked) {
+    return;
+  }
+
   // Cursor nach rechts gedrückt
   if (e.key == "ArrowRight") {
     KEY_RIGHT = true;
@@ -208,9 +212,6 @@ function startGame() {
 
   // Aufruf von Funktionen, die im zeitlichen Intervall immer wieder aufgerufen werden
   updateHandle = setInterval(update, updateIntervall);
-  if (flashTheCursor) {
-    flashCursorHandle = setInterval(flashCursor, flashCursorIntervall);
-  }
 }
 
 function update() {
@@ -227,10 +228,19 @@ function update() {
   // Eingabe auswerten
   if (KEY_ENTER) {
     calculateBeam();
+    cursorBlocked = true;
   }
 
   if (gameLost == false) {
-    gamestatus = "Versuche: " + trials + space + "Frei: " + (maxTrials - trials) + space + "Punkte: " + score;
+    gamestatus =
+      "Versuche: " +
+      trials +
+      space +
+      "Frei: " +
+      (maxTrials - trials) +
+      space +
+      "Punkte: " +
+      score;
   } else {
     gamestatus = "Das Molekül ist zerfallen. Du hast verloren!";
   }
@@ -273,23 +283,14 @@ function moveCursorLeft() {
   document.getElementById(cursor).innerHTML = questionMark;
 }
 
-function flashCursor() {
-  if (questionMarkCurrent == 0) {
-    questionMark = questionMarks[1];
-    questionMarkCurrent = 1;
-  } else {
-    questionMark = questionMarks[0];
-    questionMarkCurrent = 0;
-  }
-  document.getElementById(cursor).innerHTML = questionMark;
-}
-
 function calculateBeam() {
-  if ((trials - maxTrials) == 0) {
-    gameLost = true;    
+  if (trials - maxTrials == 0) {
+    gameLost = true;
     return;
   }
 
+  if (cursorBlocked) return;
+  
   if (mockup) {
     if (cursor == 1) {
       erg[1] = true;
@@ -437,6 +438,16 @@ function calculateBeam() {
       moveCursorRight();
       document.getElementById(32).innerHTML = orbA;
       trials++;
-    }     
+    }
   }
+  
+  // Cursor kurz blockieren um unbeabsichtigtes mehrfaches Abfeuern zu verhindern
+  cursorBlocked = true;
+  questionMark = questionMarks[1];
+  document.getElementById(cursor).innerHTML = questionMark;
+  setTimeout(function () {
+    questionMark = questionMarks[0];
+    document.getElementById(cursor).innerHTML = questionMark;
+    cursorBlocked = false;
+  }, cursorBlockedDuration);
 }
