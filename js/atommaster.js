@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 0.24                           */
-/* 26.06.2022                             */
+/* Version 0.25                           */
+/* 27.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -14,6 +14,18 @@
 /**************************************/
 /* Globale Variablen und Konstanten   */
 /**************************************/
+
+// Array für die Atome
+let atomArray = [
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+];
 
 // wird nur während der Entwicklung gebraucht
 let mockup = true;
@@ -24,7 +36,7 @@ let randomOrbs = true;
 // ist der Cursor blockiert
 let cursorBlocked = false;
 
-// Dauer einer Cursor-Blockade in ms
+// Dauer einer Cursor-Blockade nach der Einage eines Strahls in ms
 const cursorBlockedDuration = 2000;
 
 // Speicher der genutzten Orbs
@@ -50,10 +62,10 @@ for (let i = 0; i < 33; i++) {
 trials = 0;
 
 // Anzahl der maximalen Versuche
-maxTrials = 10;
+maxTrials = 14;
 
 // Anzahl der Punkte
-let score = 0;
+let score = 36;
 
 // Flag ob Spiel verloren ist
 let gameLost = false;
@@ -62,8 +74,8 @@ let gameLost = false;
 let gamestatus;
 
 // Parameter für im Intervall aufgerufene Funktionen
-let updateHandle;
-let updateIntervall = 100;
+let gameLoopHandle;
+let gameLoopIntervall = 100;
 
 // Grafiken
 let questionMarks = [
@@ -104,6 +116,7 @@ const space = "\xa0\xa0\xa0\xa0\xa0";
 let KEY_RIGHT = false; // die 'Pfeil nach rechts' Cursor-Taste
 let KEY_LEFT = false; // die 'Pfeil nach links' Cursor-Taste
 let KEY_ENTER = false; // die Eingabe-Taste
+let KEY_CONTROL = false; // die STRG-Taste
 
 /**********************************/
 /*      Tastatur abfragen         */
@@ -112,10 +125,7 @@ let KEY_ENTER = false; // die Eingabe-Taste
 /* wenn Taste gedrückt wurde      */
 /**********************************/
 document.onkeydown = function (e) {
-  // console.log(">" + e.key + "<");
-  if (cursorBlocked) {
-    return;
-  }
+  console.log(">" + e.key + "<");
 
   // Cursor nach rechts gedrückt
   if (e.key == "ArrowRight") {
@@ -130,6 +140,11 @@ document.onkeydown = function (e) {
   // Eingabe wurde gedrückt
   if (e.key == "Enter") {
     KEY_ENTER = true;
+  }
+
+  // STRG wurde gedrückt
+  if (e.key == "Control") {
+    KEY_CONTROL = true;
   }
 };
 
@@ -152,6 +167,15 @@ document.onkeyup = function (e) {
   // Eingabe wurde losgelassen
   if (e.key == "Enter") {
     KEY_ENTER = false;
+
+    questionMark = questionMarks[0];
+    document.getElementById(cursor).innerHTML = questionMark;
+    cursorBlocked = false;
+  }
+
+  // STRG wurde losgelassen
+  if (e.key == "Control") {
+    KEY_CONTROL = false;
   }
 };
 
@@ -168,13 +192,11 @@ function getOrb() {
     // zufälligen noch nicht genutzen Orb auswählen
     do {
       x = rand(0, 15);
-      console.log("x: " + x + "  orbsUsed[x]: " + orbsUsed[x]);
       if (orbsUsed[x] == false) {
         orbsUsed[x] = true;
         sucess = true;
       }
     } while (sucess == false);
-    console.log("Nach do-while -> x: " + x + "  orbsUsed[x]: " + orbsUsed[x]);
     orb = orbs[x];
   } else {
     // den nächsten nicht genutzten Orb in aufsteigender Reihenfolge auswählen
@@ -185,7 +207,7 @@ function getOrb() {
 }
 
 /*************************************/
-/* Gibt einen Zufallszahl aus der    */
+/* Gibt eine Zufallszahl aus der     */
 /* Zahlenmenge min bis max zurück    */
 /*************************************/
 function rand(min, max) {
@@ -203,18 +225,29 @@ function startGame() {
   document.getElementById(cursor).innerHTML = questionMark;
 
   if (mockup) {
-    // Mockup Atome anzeigen
-    document.getElementById(312).innerHTML = atomImage;
-    document.getElementById(517).innerHTML = atomImage;
-    document.getElementById(510).innerHTML = atomImage;
-    document.getElementById(111).innerHTML = atomImage;
+    // Atome speichern
+    
+    atomArray[0][1] = 1;
+    atomArray[2][2] = 1;
+    atomArray[4][0] = 1;
+    atomArray[4][7] = 1;
+    
+    // setAtoms();
+
+    // Atome anzeigen
+    showAtoms();
   }
 
   // Aufruf von Funktionen, die im zeitlichen Intervall immer wieder aufgerufen werden
-  updateHandle = setInterval(update, updateIntervall);
+  gameLoopHandle = setInterval(gameLoop, gameLoopIntervall);
 }
 
-function update() {
+/*******************************/
+/* Die Spiel-Schleife          */
+/* von der aus alles gesteuert */
+/* wird                        */
+/*******************************/
+function gameLoop() {
   // Cursor nach rechts bewegen
   if (KEY_RIGHT) {
     moveCursorRight();
@@ -228,25 +261,25 @@ function update() {
   // Eingabe auswerten
   if (KEY_ENTER) {
     calculateBeam();
-    cursorBlocked = true;
   }
 
-  if (gameLost == false) {
-    gamestatus =
-      "Versuche: " +
-      trials +
-      space +
-      "Frei: " +
-      (maxTrials - trials) +
-      space +
-      "Punkte: " +
-      score;
-  } else {
-    gamestatus = "Das Molekül ist zerfallen. Du hast verloren!";
-  }
+  gamestatus =
+    "Versuche: " +
+    trials +
+    space +
+    "Frei: " +
+    (maxTrials - trials) +
+    space +
+    "Punkte: " +
+    score;
   document.getElementById("status").innerHTML = gamestatus;
 }
 
+/*******************************/
+/* Setzt den Cursor auf das    */
+/* nächste freie Feld          */
+/* gegen den Uhrzeigersinn     */
+/*******************************/
 function moveCursorRight() {
   lastCursor = cursor;
   let free = false;
@@ -259,12 +292,16 @@ function moveCursorRight() {
       free = true;
     }
   } while (free == false);
-  console.log("Cursor r: " + cursor);
 
   document.getElementById(lastCursor).innerHTML = "";
   document.getElementById(cursor).innerHTML = questionMark;
 }
 
+/*******************************/
+/* Setzt den Cursor auf das    */
+/* nächste freie Feld          */
+/* im Uhrzeigersinn            */
+/*******************************/
 function moveCursorLeft() {
   lastCursor = cursor;
   let free = false;
@@ -277,177 +314,238 @@ function moveCursorLeft() {
       free = true;
     }
   } while (free == false);
-  console.log("Cursor l: " + cursor);
 
   document.getElementById(lastCursor).innerHTML = "";
   document.getElementById(cursor).innerHTML = questionMark;
 }
 
+/*******************************/
+/* Verteilt vier Atome auf dem */
+/* Spielfeld auf zufälligen    */
+/* Positionen                  */
+/*******************************/
+function setAtoms() {
+  for (let i = 1; i <= 4; i++) {
+    let sucess = false;
+    do {
+      let x = rand(1, 8) - 1;
+      let y = rand(1, 8) - 1;
+      if (atomArray[x][y] == 0) {
+        sucess = true;
+        atomArray[x][y] = 1;
+      }
+    } while (sucess == false);
+  }
+}
+
+/*******************************/
+/* Zeigt die Atome auf dem     */
+/* Spielfeld an                */
+/*******************************/
+function showAtoms() {
+  for (let x = 0; x <= 7; x++) {
+    for (let y = 0; y <= 7; y++) {
+      if (atomArray[x][y] == 1) {
+        document.getElementById("f" + x + y).innerHTML = atomImage;
+      }
+    }
+  }
+}
+
+/*******************************/
+/* Berechnet das Ergebnis      */
+/* einer Eingabe und zeigt     */
+/* es auf dem Spielbrett an    */
+/*******************************/
 function calculateBeam() {
   if (trials - maxTrials == 0) {
     gameLost = true;
     return;
   }
 
+  let points;
+
   if (cursorBlocked) return;
-  
+
   if (mockup) {
-    if (cursor == 1) {
-      erg[1] = true;
+    if (cursor == 32) {
+      erg[32] = true;
       moveCursorRight();
-      document.getElementById(1).innerHTML = orbR;
+      document.getElementById(32).innerHTML = orbR;
       trials++;
-    } else if (cursor == 2) {
-      erg[2] = true;
-      moveCursorRight();
-      document.getElementById(2).innerHTML = orbA;
-      trials++;
-    } else if (cursor == 3) {
-      erg[3] = true;
-      moveCursorRight();
-      document.getElementById(3).innerHTML = orbR;
-      trials++;
-    } else if (cursor == 4 || cursor == 10) {
-      let beam = getOrb();
-      erg[4] = true;
-      erg[10] = true;
-      moveCursorRight();
-      document.getElementById(4).innerHTML = beam;
-      document.getElementById(10).innerHTML = beam;
-      trials++;
-    } else if (cursor == 5 || cursor == 20) {
-      let beam = getOrb();
-      erg[5] = true;
-      erg[20] = true;
-      moveCursorRight();
-      document.getElementById(5).innerHTML = beam;
-      document.getElementById(20).innerHTML = beam;
-      trials++;
-    } else if (cursor == 6 || cursor == 19) {
-      let beam = getOrb();
-      erg[6] = true;
-      erg[19] = true;
-      moveCursorRight();
-      document.getElementById(6).innerHTML = beam;
-      document.getElementById(19).innerHTML = beam;
-      trials++;
-    } else if (cursor == 7 || cursor == 21) {
-      let beam = getOrb();
-      erg[7] = true;
-      erg[21] = true;
-      moveCursorRight();
-      document.getElementById(7).innerHTML = beam;
-      document.getElementById(21).innerHTML = beam;
-      trials++;
-    } else if (cursor == 8) {
-      erg[8] = true;
-      moveCursorRight();
-      document.getElementById(8).innerHTML = orbA;
-      trials++;
-    } else if (cursor == 9) {
-      erg[9] = true;
-      moveCursorRight();
-      document.getElementById(9).innerHTML = orbA;
-      trials++;
-    } else if (cursor == 11) {
-      erg[11] = true;
-      moveCursorRight();
-      document.getElementById(11).innerHTML = orbA;
-      trials++;
-    } else if (cursor == 12) {
-      erg[12] = true;
-      moveCursorRight();
-      document.getElementById(12).innerHTML = orbR;
-      trials++;
-    } else if (cursor == 13) {
-      erg[13] = true;
-      moveCursorRight();
-      document.getElementById(13).innerHTML = orbA;
-      trials++;
-    } else if (cursor == 14) {
-      erg[14] = true;
-      moveCursorRight();
-      document.getElementById(14).innerHTML = orbR;
-      trials++;
-    } else if (cursor == 15 || cursor == 26) {
-      let beam = getOrb();
-      erg[15] = true;
-      erg[26] = true;
-      moveCursorRight();
-      document.getElementById(15).innerHTML = beam;
-      document.getElementById(26).innerHTML = beam;
-      trials++;
-    } else if (cursor == 16 || cursor == 25) {
-      let beam = getOrb();
-      erg[16] = true;
-      erg[25] = true;
-      moveCursorRight();
-      document.getElementById(16).innerHTML = beam;
-      document.getElementById(25).innerHTML = beam;
-      trials++;
-    } else if (cursor == 17) {
-      erg[17] = true;
-      moveCursorRight();
-      document.getElementById(17).innerHTML = orbA;
-      trials++;
-    } else if (cursor == 18 || cursor == 23) {
-      let beam = getOrb();
-      erg[18] = true;
-      erg[23] = true;
-      moveCursorRight();
-      document.getElementById(18).innerHTML = beam;
-      document.getElementById(23).innerHTML = beam;
-      trials++;
-    } else if (cursor == 22) {
-      erg[22] = true;
-      moveCursorRight();
-      document.getElementById(22).innerHTML = orbA;
-      trials++;
-    } else if (cursor == 24) {
-      erg[24] = true;
-      moveCursorRight();
-      document.getElementById(24).innerHTML = orbA;
-      trials++;
-    } else if (cursor == 27) {
-      erg[27] = true;
-      moveCursorRight();
-      document.getElementById(27).innerHTML = orbR;
-      trials++;
-    } else if (cursor == 28) {
-      erg[28] = true;
-      moveCursorRight();
-      document.getElementById(28).innerHTML = orbA;
-      trials++;
-    } else if (cursor == 29) {
-      erg[29] = true;
-      moveCursorRight();
-      document.getElementById(29).innerHTML = orbR;
-      trials++;
-    } else if (cursor == 30) {
-      erg[30] = true;
-      moveCursorRight();
-      document.getElementById(30).innerHTML = orbA;
-      trials++;
+      points = 1;
     } else if (cursor == 31) {
       erg[31] = true;
       moveCursorRight();
       document.getElementById(31).innerHTML = orbA;
       trials++;
-    } else if (cursor == 32) {
-      erg[32] = true;
+      points = 1;
+    } else if (cursor == 30) {
+      erg[30] = true;
       moveCursorRight();
-      document.getElementById(32).innerHTML = orbA;
+      document.getElementById(30).innerHTML = orbR;
       trials++;
+      points = 1;
+    } else if (cursor == 29 || cursor == 23) {
+      let beam = getOrb();
+      erg[29] = true;
+      erg[23] = true;
+      moveCursorRight();
+      document.getElementById(29).innerHTML = beam;
+      document.getElementById(23).innerHTML = beam;
+      trials++;
+      points = 2;
+    } else if (cursor == 28 || cursor == 13) {
+      let beam = getOrb();
+      erg[13] = true;
+      erg[28] = true;
+      moveCursorRight();
+      document.getElementById(13).innerHTML = beam;
+      document.getElementById(28).innerHTML = beam;
+      trials++;
+      points = 2;
+    } else if (cursor == 27 || cursor == 14) {
+      let beam = getOrb();
+      erg[14] = true;
+      erg[27] = true;
+      moveCursorRight();
+      document.getElementById(14).innerHTML = beam;
+      document.getElementById(27).innerHTML = beam;
+      trials++;
+      points = 2;
+    } else if (cursor == 12 || cursor == 26) {
+      let beam = getOrb();
+      erg[12] = true;
+      erg[26] = true;
+      moveCursorRight();
+      document.getElementById(12).innerHTML = beam;
+      document.getElementById(26).innerHTML = beam;
+      trials++;
+      points = 2;
+    } else if (cursor == 25) {
+      erg[25] = true;
+      moveCursorRight();
+      document.getElementById(25).innerHTML = orbA;
+      trials++;
+      points = 1;
+    } else if (cursor == 24) {
+      erg[24] = true;
+      moveCursorRight();
+      document.getElementById(24).innerHTML = orbA;
+      trials++;
+      points = 1;
+    } else if (cursor == 22) {
+      erg[22] = true;
+      moveCursorRight();
+      document.getElementById(22).innerHTML = orbA;
+      trials++;
+      points = 1;
+    } else if (cursor == 21) {
+      erg[21] = true;
+      moveCursorRight();
+      document.getElementById(21).innerHTML = orbR;
+      trials++;
+      points = 1;
+    } else if (cursor == 20) {
+      erg[20] = true;
+      moveCursorRight();
+      document.getElementById(20).innerHTML = orbA;
+      trials++;
+      points = 1;
+    } else if (cursor == 19) {
+      erg[19] = true;
+      moveCursorRight();
+      document.getElementById(19).innerHTML = orbR;
+      trials++;
+      points = 1;
+    } else if (cursor == 7 || cursor == 18) {
+      let beam = getOrb();
+      erg[7] = true;
+      erg[18] = true;
+      moveCursorRight();
+      document.getElementById(7).innerHTML = beam;
+      document.getElementById(18).innerHTML = beam;
+      trials++;
+      points = 2;
+    } else if (cursor == 8 || cursor == 17) {
+      let beam = getOrb();
+      erg[8] = true;
+      erg[17] = true;
+      moveCursorRight();
+      document.getElementById(8).innerHTML = beam;
+      document.getElementById(17).innerHTML = beam;
+      trials++;
+      points = 2;
+    } else if (cursor == 16) {
+      erg[16] = true;
+      moveCursorRight();
+      document.getElementById(16).innerHTML = orbA;
+      trials++;
+      points = 1;
+    } else if (cursor == 10 || cursor == 15) {
+      let beam = getOrb();
+      erg[10] = true;
+      erg[15] = true;
+      moveCursorRight();
+      document.getElementById(10).innerHTML = beam;
+      document.getElementById(15).innerHTML = beam;
+      trials++;
+      points = 2;
+    } else if (cursor == 11) {
+      erg[11] = true;
+      moveCursorRight();
+      document.getElementById(11).innerHTML = orbA;
+      trials++;
+      points = 1;
+    } else if (cursor == 9) {
+      erg[9] = true;
+      moveCursorRight();
+      document.getElementById(9).innerHTML = orbA;
+      trials++;
+      points = 1;
+    } else if (cursor == 6) {
+      erg[6] = true;
+      moveCursorRight();
+      document.getElementById(6).innerHTML = orbR;
+      trials++;
+      points = 1;
+    } else if (cursor == 5) {
+      erg[5] = true;
+      moveCursorRight();
+      document.getElementById(5).innerHTML = orbA;
+      trials++;
+      points = 1;
+    } else if (cursor == 4) {
+      erg[4] = true;
+      moveCursorRight();
+      document.getElementById(4).innerHTML = orbR;
+      trials++;
+      points = 1;
+    } else if (cursor == 3) {
+      erg[3] = true;
+      moveCursorRight();
+      document.getElementById(3).innerHTML = orbA;
+      trials++;
+      points = 1;
+    } else if (cursor == 2) {
+      erg[2] = true;
+      moveCursorRight();
+      document.getElementById(2).innerHTML = orbA;
+      trials++;
+      points = 1;
+    } else if (cursor == 1) {
+      erg[1] = true;
+      moveCursorRight();
+      document.getElementById(1).innerHTML = orbA;
+      trials++;
+      points = 1;
     }
+
+    score = score - points;
   }
-  
-  // Cursor kurz blockieren um unbeabsichtigtes mehrfaches Abfeuern zu verhindern
+
+  // Cursor bis zum Loslassen der Return-Taste blockieren um unbeabsichtigtes mehrfaches Abfeuern zu verhindern
   cursorBlocked = true;
   questionMark = questionMarks[1];
   document.getElementById(cursor).innerHTML = questionMark;
-  setTimeout(function () {
-    questionMark = questionMarks[0];
-    document.getElementById(cursor).innerHTML = questionMark;
-    cursorBlocked = false;
-  }, cursorBlockedDuration);
 }
