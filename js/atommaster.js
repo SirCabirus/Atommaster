@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 0.25                           */
-/* 27.06.2022                             */
+/* Version 0.26                           */
+/* 29.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -36,9 +36,6 @@ let randomOrbs = true;
 // ist der Cursor blockiert
 let cursorBlocked = false;
 
-// Dauer einer Cursor-Blockade nach der Einage eines Strahls in ms
-const cursorBlockedDuration = 2000;
-
 // Speicher der genutzten Orbs
 let orbsUsed = [];
 for (let i = 0; i < 16; i++) {
@@ -58,14 +55,17 @@ for (let i = 0; i < 33; i++) {
   erg[i] = false;
 }
 
+// Zähler der genutzten Randflächen
+rimUsed = 0;
+
+// Flag ob es noch freie Randfläche gibt
+rimFree = true;
+
 // Anzahl der Versuche
 trials = 0;
 
-// Anzahl der maximalen Versuche
-maxTrials = 14;
-
 // Anzahl der Punkte
-let score = 36;
+let score = 0;
 
 // Flag ob Spiel verloren ist
 let gameLost = false;
@@ -125,7 +125,7 @@ let KEY_CONTROL = false; // die STRG-Taste
 /* wenn Taste gedrückt wurde      */
 /**********************************/
 document.onkeydown = function (e) {
-  console.log(">" + e.key + "<");
+  // console.log(">" + e.key + "<");
 
   // Cursor nach rechts gedrückt
   if (e.key == "ArrowRight") {
@@ -168,8 +168,10 @@ document.onkeyup = function (e) {
   if (e.key == "Enter") {
     KEY_ENTER = false;
 
-    questionMark = questionMarks[0];
-    document.getElementById(cursor).innerHTML = questionMark;
+    if (rimFree == true) {
+      questionMark = questionMarks[0];
+      document.getElementById(cursor).innerHTML = questionMark;
+    }
     cursorBlocked = false;
   }
 
@@ -222,16 +224,18 @@ function rand(min, max) {
 /*    aufgerufen                      */
 /**************************************/
 function startGame() {
+  // Abfrage-Cursor anzeigen
+  // der Cursor wird durch die Funktionen moveCursorRight und moveCursorLeft versetzt
   document.getElementById(cursor).innerHTML = questionMark;
 
   if (mockup) {
     // Atome speichern
-    
+
     atomArray[0][1] = 1;
     atomArray[2][2] = 1;
     atomArray[4][0] = 1;
     atomArray[4][7] = 1;
-    
+
     // setAtoms();
 
     // Atome anzeigen
@@ -267,9 +271,6 @@ function gameLoop() {
     "Versuche: " +
     trials +
     space +
-    "Frei: " +
-    (maxTrials - trials) +
-    space +
     "Punkte: " +
     score;
   document.getElementById("status").innerHTML = gamestatus;
@@ -281,6 +282,7 @@ function gameLoop() {
 /* gegen den Uhrzeigersinn     */
 /*******************************/
 function moveCursorRight() {
+  if (rimFree == false) return;
   lastCursor = cursor;
   let free = false;
   do {
@@ -303,6 +305,7 @@ function moveCursorRight() {
 /* im Uhrzeigersinn            */
 /*******************************/
 function moveCursorLeft() {
+  if (rimFree == false) return;
   lastCursor = cursor;
   let free = false;
   do {
@@ -317,6 +320,12 @@ function moveCursorLeft() {
 
   document.getElementById(lastCursor).innerHTML = "";
   document.getElementById(cursor).innerHTML = questionMark;
+}
+
+function setCursorAfterBeam() {
+  if (rimUsed < 31) {
+    moveCursorRight();
+  }
 }
 
 /*******************************/
@@ -358,10 +367,7 @@ function showAtoms() {
 /* es auf dem Spielbrett an    */
 /*******************************/
 function calculateBeam() {
-  if (trials - maxTrials == 0) {
-    gameLost = true;
-    return;
-  }
+  if (rimFree == false) return;
 
   let points;
 
@@ -370,19 +376,19 @@ function calculateBeam() {
   if (mockup) {
     if (cursor == 32) {
       erg[32] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(32).innerHTML = orbR;
       trials++;
       points = 1;
     } else if (cursor == 31) {
       erg[31] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(31).innerHTML = orbA;
       trials++;
       points = 1;
     } else if (cursor == 30) {
       erg[30] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(30).innerHTML = orbR;
       trials++;
       points = 1;
@@ -390,7 +396,7 @@ function calculateBeam() {
       let beam = getOrb();
       erg[29] = true;
       erg[23] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(29).innerHTML = beam;
       document.getElementById(23).innerHTML = beam;
       trials++;
@@ -399,7 +405,7 @@ function calculateBeam() {
       let beam = getOrb();
       erg[13] = true;
       erg[28] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(13).innerHTML = beam;
       document.getElementById(28).innerHTML = beam;
       trials++;
@@ -408,7 +414,7 @@ function calculateBeam() {
       let beam = getOrb();
       erg[14] = true;
       erg[27] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(14).innerHTML = beam;
       document.getElementById(27).innerHTML = beam;
       trials++;
@@ -417,44 +423,44 @@ function calculateBeam() {
       let beam = getOrb();
       erg[12] = true;
       erg[26] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(12).innerHTML = beam;
       document.getElementById(26).innerHTML = beam;
       trials++;
       points = 2;
     } else if (cursor == 25) {
       erg[25] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(25).innerHTML = orbA;
       trials++;
       points = 1;
     } else if (cursor == 24) {
       erg[24] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(24).innerHTML = orbA;
       trials++;
       points = 1;
     } else if (cursor == 22) {
       erg[22] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(22).innerHTML = orbA;
       trials++;
       points = 1;
     } else if (cursor == 21) {
       erg[21] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(21).innerHTML = orbR;
       trials++;
       points = 1;
     } else if (cursor == 20) {
       erg[20] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(20).innerHTML = orbA;
       trials++;
       points = 1;
     } else if (cursor == 19) {
       erg[19] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(19).innerHTML = orbR;
       trials++;
       points = 1;
@@ -462,7 +468,7 @@ function calculateBeam() {
       let beam = getOrb();
       erg[7] = true;
       erg[18] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(7).innerHTML = beam;
       document.getElementById(18).innerHTML = beam;
       trials++;
@@ -471,14 +477,14 @@ function calculateBeam() {
       let beam = getOrb();
       erg[8] = true;
       erg[17] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(8).innerHTML = beam;
       document.getElementById(17).innerHTML = beam;
       trials++;
       points = 2;
     } else if (cursor == 16) {
       erg[16] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(16).innerHTML = orbA;
       trials++;
       points = 1;
@@ -486,32 +492,32 @@ function calculateBeam() {
       let beam = getOrb();
       erg[10] = true;
       erg[15] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(10).innerHTML = beam;
       document.getElementById(15).innerHTML = beam;
       trials++;
       points = 2;
     } else if (cursor == 11) {
       erg[11] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(11).innerHTML = orbA;
       trials++;
       points = 1;
     } else if (cursor == 9) {
       erg[9] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(9).innerHTML = orbA;
       trials++;
       points = 1;
     } else if (cursor == 6) {
       erg[6] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(6).innerHTML = orbR;
       trials++;
       points = 1;
     } else if (cursor == 5) {
       erg[5] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(5).innerHTML = orbA;
       trials++;
       points = 1;
@@ -523,29 +529,42 @@ function calculateBeam() {
       points = 1;
     } else if (cursor == 3) {
       erg[3] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(3).innerHTML = orbA;
       trials++;
       points = 1;
     } else if (cursor == 2) {
       erg[2] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(2).innerHTML = orbA;
       trials++;
       points = 1;
     } else if (cursor == 1) {
       erg[1] = true;
-      moveCursorRight();
+      setCursorAfterBeam();
       document.getElementById(1).innerHTML = orbA;
       trials++;
       points = 1;
     }
 
-    score = score - points;
+    // Punktestand abgleichen
+    score = score + points;
+    
+    // Anzahl genutzter Randfelder erhöhen
+    rimUsed = rimUsed + points; // TODO rimUsed hat immer den gleichen Wert wie score
+
+    // Abfrage-Cursor parken wenn kein Platz mehr frei ist und Status merken
+    if (rimUsed >= 32) {
+      rimFree = false;
+      document.getElementById("hold").innerHTML = questionMark;
+    }
   }
 
-  // Cursor bis zum Loslassen der Return-Taste blockieren um unbeabsichtigtes mehrfaches Abfeuern zu verhindern
-  cursorBlocked = true;
-  questionMark = questionMarks[1];
-  document.getElementById(cursor).innerHTML = questionMark;
+  // Wenn noch Platz frei istCursor bis zum Loslassen der Return-Taste blockieren 
+  // um unbeabsichtigtes mehrfaches Abfeuern zu verhindern
+  if (rimFree) {
+    cursorBlocked = true;
+    questionMark = questionMarks[1];
+    document.getElementById(cursor).innerHTML = questionMark;
+  }
 }
