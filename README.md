@@ -3,9 +3,9 @@ A javaScript implementation of the Black Box (ORDO) Game.
 
 Rules: https://en.wikipedia.org/wiki/Black_Box_(game)
 
-A hit is marked with A
-A reflection is marked with R
-The entrance and exit of a beam is marked with two marbles of the same color.
+- A hit is marked with A
+- A reflection is marked with R
+- The entrance and exit of a beam is marked with two marbles of the same color.
 
 Attention: at the moment the game is still in development. 
 There is only a mockup to check the GUI. 
@@ -37,9 +37,9 @@ Eine JavaScript Implementierung des Black Box (ORDO) Spiels.
 
 https://en.wikipedia.org/wiki/Black_Box_(game)
 
-Ein Treffer wird mit A markiert
-Eine Reflexion wird mit R markiert
-Ein- und Ausgang eines Strahls wird mit zwei gleichfarbigen Murmeln markiert.
+- Ein Treffer wird mit A markiert
+- Eine Reflexion wird mit R markiert
+- Ein- und Ausgang eines Strahls wird mit zwei gleichfarbigen Murmeln markiert.
 
 Achtung: zur Zeit befindet sich das Spiel noch in Entwicklung. 
 Es gibt lediglich ein Mockup um die GUI zu überprüfen. 
