@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 0.30                           */
-/* 30.06.2022                             */
+/* Version 0.40                           */
+/* 01.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -54,6 +54,7 @@ let randomOrbs = true;
 // ist der Cursor blockiert
 let beamCursorBlocked = false;
 let setCursorBlocked = false;
+let setAtomCursorBlocked = false;
 
 // Speicher der genutzten Orbs
 let orbsUsed = [];
@@ -67,6 +68,15 @@ let currOrb = 0;
 // Position des Abfrage-Cursors
 let beamCursor = 1;
 let lastBeamCursor = beamCursor;
+
+// Position des Set-Cursors
+let setCursorX = 0;
+let setCursorY = 0;
+let setCursorLastX = 0;
+let setCursorLastY = 0;
+
+// Anzahl der gesetzten Atome
+let setAtomsCnt = 0;
 
 // Speicher für die belegten Abfragefelder
 let erg = [33];
@@ -85,6 +95,10 @@ trials = 0;
 
 // Anzahl der Punkte
 let score = 0;
+
+let hits = 0;
+
+let missed = 0;
 
 // Flag ob Spiel verloren ist
 let gameLost = false;
@@ -105,10 +119,10 @@ let questionMark = questionMarks[0];
 let questionMarkCurrent = 0;
 
 let setAtomMark = '<img src="img/atom2-s.png">';
-let setCursor = "f00";
-let lastSetCursor = "f00";
+let atomQuestionMark = '<img src="img/atomQuestionMark.png">';
+let atomHit = '<img src="img/atomHit.png">';
+let atomMissed = '<img src="img/atomMissed.png">';
 
-// let atomImage = '<img src="img/atom-l.png">';
 let atomImage = '<img src="img/atom2-s.png">';
 let orbA = '<img src="img/orbA.png">';
 let orbR = '<img src="img/orbR.png">';
@@ -142,6 +156,7 @@ let KEY_UP = false; // die 'Pfeil nach oben' Cursor-Taste
 let KEY_DOWN = false; // die 'Pfeil nach unten' Cursor-Taste
 let KEY_ENTER = false; // die Eingabe-Taste
 let KEY_CONTROL = false; // die STRG-Taste
+let KEY_E = false; // die E-Taste
 
 /**********************************/
 /*      Tastatur abfragen         */
@@ -181,6 +196,11 @@ document.onkeydown = function (e) {
   if (e.key == "Control") {
     KEY_CONTROL = true;
   }
+
+  // E wurde gedrückt
+  if (e.key == "e" || e.key == "E") {
+    KEY_E = true;
+  }
 };
 
 /**********************************/
@@ -218,7 +238,156 @@ document.onkeyup = function (e) {
   if (e.key == "Control") {
     KEY_CONTROL = false;
   }
+  
+  // E wurde losgelassen
+  if (e.key == "e" || e.key == "E") {
+    KEY_E = false;
+  }
 };
+
+/**************************************/
+/*       Spiel starten                */
+/*                                    */
+/*    Diese Funktion wird über den    */
+/*    body der Seite index.html       */
+/*    aufgerufen                      */
+/**************************************/
+function startGame() {
+  currentMode = mode.Beam;
+
+  // Abfrage-Cursor anzeigen
+  // der Cursor wird durch die Funktionen moveCursorRight und moveCursorLeft versetzt
+  document.getElementById(beamCursor).innerHTML = questionMark;
+
+  if (mockup) {
+    // Atome speichern
+
+    atomArray[1][0] = 1;
+    atomArray[2][2] = 1;
+    atomArray[0][4] = 1;
+    atomArray[7][4] = 1;
+
+    // setAtoms();
+
+    // Atome anzeigen
+    // showAtoms();
+  }
+
+  // Aufruf von Funktionen, die im zeitlichen Intervall immer wieder aufgerufen werden
+  gameLoopHandle = setInterval(gameLoop, gameLoopIntervall);
+}
+
+/*******************************/
+/* Die Spiel-Schleife          */
+/* von der aus alles gesteuert */
+/* wird                        */
+/*******************************/
+function gameLoop() {
+  // Cursor nach rechts bewegen
+  if (KEY_RIGHT) {
+    switch (currentMode) {
+      case mode.Beam:
+        moveBeamCursorRight();
+        break;
+      case mode.Set:
+        moveSetCursorRight();
+        break;
+      default:
+        console.log("KEY_RIGHT down: Modus currentMode nicht definiert.");
+    }
+  }
+
+  // Cursor nach links bewegen
+  if (KEY_LEFT) {
+    switch (currentMode) {
+      case mode.Beam:
+        moveBeamCursorLeft();
+        break;
+      case mode.Set:
+        moveSetCursorLeft();
+        break;
+      default:
+        console.log("KEY_LEFT down: Modus nicht definiert.");
+    }
+  }
+
+  // Cursor nach oben bewegen
+  if (KEY_UP) {
+    switch (currentMode) {
+      case mode.Beam:
+        // moveBeamCursorLeft();
+        break;
+      case mode.Set:
+        moveSetCursorUp();
+        break;
+      default:
+        console.log("KEY_UP down: Modus nicht definiert.");
+    }
+  }
+
+  // Cursor nach unten bewegen
+  if (KEY_DOWN) {
+    switch (currentMode) {
+      case mode.Beam:
+        // moveBeamCursorLeft();
+        break;
+      case mode.Set:
+        moveSetCursorDown();
+        break;
+      default:
+        console.log("KEY_DOWN down: Modus nicht definiert.");
+    }
+  }
+
+  // Eingabe auswerten
+  if (KEY_ENTER) {
+    switch (currentMode) {
+      case mode.Beam:
+        calculateBeam();
+        break;
+      case mode.Set:
+        toggleSetAtom();
+        setAtomCursorBlocked = true;
+        break;
+      default:
+        console.log("KEY_ENTER down: Modus nicht definiert.");
+    }
+  }
+
+  // Eingabe losgelassen auswerten
+  if (!KEY_ENTER) {
+    switch (currentMode) {
+      case mode.Beam:
+        if (rimFree == true) {
+          questionMark = questionMarks[0];
+          document.getElementById(beamCursor).innerHTML = questionMark;
+        }
+        beamCursorBlocked = false;
+        break;
+      case mode.Set:
+        setAtomCursorBlocked = false;
+        break;
+      default:
+        console.log("KEY_ENTER up: Modus nicht definiert.");
+    }
+  }
+
+  if (KEY_CONTROL) {
+    switchMode();
+  }
+
+  if (!KEY_CONTROL) {
+    setCursorBlocked = false;
+  }
+
+  if (KEY_E) {
+    calculateResult();
+  }
+
+  // gamestatus = "Versuche: " + trials + space + "Punkte: " + score;
+  gamestatus = "Versuche: " + trials + space + "Punkte: " + score + space + "Treffer: " + hits + space + "Verpasst: " + missed;
+  document.getElementById("status").innerHTML = gamestatus;
+}
 
 /**********************************/
 /* Umschalten der verschiedenen   */
@@ -230,13 +399,18 @@ function switchMode() {
     case mode.Beam:
       currentMode = mode.Set;
       setCursorBlocked = true;
-      document.getElementById(setCursor).innerHTML = setAtomMark;
-      console.log("Set Modus aktiviert!");
+      document.getElementById(getSetID()).innerHTML = setAtomMark;
+      questionMark = questionMarks[1];
+      document.getElementById(beamCursor).innerHTML = questionMark;
       break;
     case mode.Set:
       currentMode = mode.Beam;
       setCursorBlocked = true;
-      console.log("Beam Modus aktiviert!");
+      if (atomSetArray[setCursorX][setCursorY] == 0) {
+        document.getElementById(getSetID()).innerHTML = "";
+      }
+      questionMark = questionMarks[0];
+      document.getElementById(beamCursor).innerHTML = questionMark;
       break;
     default:
       console.log("switchMode(): currentMode nicht definiert.");
@@ -278,117 +452,11 @@ function rand(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-/**************************************/
-/*       Spiel starten                */
-/*                                    */
-/*    Diese Funktion wird über den    */
-/*    body der Seite index.html       */
-/*    aufgerufen                      */
-/**************************************/
-function startGame() {
-  currentMode = mode.Beam;
-
-  // Abfrage-Cursor anzeigen
-  // der Cursor wird durch die Funktionen moveCursorRight und moveCursorLeft versetzt
-  document.getElementById(beamCursor).innerHTML = questionMark;
-
-  if (mockup) {
-    // Atome speichern
-
-    atomArray[0][1] = 1;
-    atomArray[2][2] = 1;
-    atomArray[4][0] = 1;
-    atomArray[4][7] = 1;
-
-    // setAtoms();
-
-    // Atome anzeigen
-    showAtoms();
-  }
-
-  // Aufruf von Funktionen, die im zeitlichen Intervall immer wieder aufgerufen werden
-  gameLoopHandle = setInterval(gameLoop, gameLoopIntervall);
-}
-
-/*******************************/
-/* Die Spiel-Schleife          */
-/* von der aus alles gesteuert */
-/* wird                        */
-/*******************************/
-function gameLoop() {
-  // Cursor nach rechts bewegen
-  if (KEY_RIGHT) {
-    switch (currentMode) {
-      case mode.Beam:
-        moveBeamCursorRight();
-        break;
-      case mode.Set:
-        break;
-      default:
-        console.log("KEY_RIGHT down: Modus currentMode nicht definiert.");
-    }
-  }
-
-  // Cursor nach links bewegen
-  if (KEY_LEFT) {
-    switch (currentMode) {
-      case mode.Beam:
-        moveBeamCursorLeft();
-        break;
-      case mode.Set:
-        break;
-      default:
-        console.log("KEY_LEFT down: Modus nicht definiert.");
-    }
-  }
-
-  // Eingabe auswerten
-  if (KEY_ENTER) {
-    switch (currentMode) {
-      case mode.Beam:
-        calculateBeam();
-        break;
-      case mode.Set:
-        break;
-      default:
-        console.log("KEY_ENTER down: Modus nicht definiert.");
-    }
-  }
-
-  // Eingabe losgelassen auswerten
-  if (!KEY_ENTER) {
-    switch (currentMode) {
-      case mode.Beam:
-        if (rimFree == true) {
-          questionMark = questionMarks[0];
-          document.getElementById(beamCursor).innerHTML = questionMark;
-        }
-        beamCursorBlocked = false;
-        break;
-      case mode.Set:
-        break;
-      default:
-        console.log("KEY_ENTER up: Modus nicht definiert.");
-    }
-  }
-
-  if (KEY_CONTROL) {
-    switchMode();
-  }
-
-  if (!KEY_CONTROL) {
-    setCursorBlocked = false;
-  }
-
-  gamestatus = "Versuche: " + trials + space + "Punkte: " + score;
-  document.getElementById("status").innerHTML = gamestatus;
-}
-
-/*******************************/
-/* Setzt den Cursor auf das    */
-/* nächste freie Feld          */
-/* gegen den Uhrzeigersinn     */
-/*******************************/
+/************************************/
+/* Setzt den Abfrage-Cursor auf das */
+/* nächste freie Feld               */
+/* gegen den Uhrzeigersinn          */
+/************************************/
 function moveBeamCursorRight() {
   if (rimFree == false) return;
   lastBeamCursor = beamCursor;
@@ -407,11 +475,11 @@ function moveBeamCursorRight() {
   document.getElementById(beamCursor).innerHTML = questionMark;
 }
 
-/*******************************/
-/* Setzt den Cursor auf das    */
-/* nächste freie Feld          */
-/* im Uhrzeigersinn            */
-/*******************************/
+/************************************/
+/* Setzt den Abfrage-Cursor auf das */
+/* nächste freie Feld               */
+/* im Uhrzeigersinn                 */
+/************************************/
 function moveBeamCursorLeft() {
   if (rimFree == false) return;
   lastBeamCursor = beamCursor;
@@ -443,6 +511,107 @@ function setCursorAfterBeam(count) {
   if (count == 1 && rimUsed == 31) return;
 
   moveBeamCursorRight();
+}
+
+function getSetID() {
+  let setID = "f" + setCursorX + setCursorY;
+  return setID;
+}
+
+function getLastSetID() {
+  let setLastID = "f" + setCursorLastX + setCursorLastY;
+  return setLastID;
+}
+
+function getID(x, y) {
+  let setID = "f" + x + y;
+  return setID;
+}
+
+function moveSetCursorRight() {
+  setCursorLastX = setCursorX;
+  setCursorLastY = setCursorY;
+  let fid;
+  if (setCursorX < 7) {
+    setCursorX++;
+    if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
+      fid = getLastSetID();
+      document.getElementById(fid).innerHTML = "";
+    }
+    fid = getSetID();
+    document.getElementById(fid).innerHTML = setAtomMark;
+  }
+}
+
+function moveSetCursorLeft() {
+  setCursorLastX = setCursorX;
+  setCursorLastY = setCursorY;
+  let fid;
+  if (setCursorX > 0) {
+    setCursorX--;
+    if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
+      fid = getLastSetID();
+      document.getElementById(fid).innerHTML = "";
+    }
+    fid = getSetID();
+    document.getElementById(fid).innerHTML = setAtomMark;
+  }
+}
+
+function moveSetCursorUp() {
+  setCursorLastX = setCursorX;
+  setCursorLastY = setCursorY;
+  let fid;
+  if (setCursorY > 0) {
+    setCursorY--;
+    if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
+      fid = getLastSetID();
+      document.getElementById(fid).innerHTML = "";
+    }
+    fid = getSetID();
+    document.getElementById(fid).innerHTML = setAtomMark;
+  }
+}
+
+function moveSetCursorDown() {
+  setCursorLastX = setCursorX;
+  setCursorLastY = setCursorY;
+  let fid;
+  if (setCursorY < 7) {
+    setCursorY++;
+    if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
+      fid = getLastSetID();
+      document.getElementById(fid).innerHTML = "";
+    }
+    fid = getSetID();
+    document.getElementById(fid).innerHTML = setAtomMark;
+  }
+}
+
+function toggleSetAtom() {
+  if (setAtomCursorBlocked == true) return;
+
+  let fid = getSetID();
+
+  if (atomSetArray[setCursorX][setCursorY] == 0) {
+    setAtomProbeField();
+    document.getElementById(fid).innerHTML = setAtomMark;
+  } else {
+    deleteAtomProbeField();
+    document.getElementById(fid).innerHTML = "";
+  }
+}
+
+function setAtomProbeField() {
+  if (setAtomsCnt < 4) {
+    atomSetArray[setCursorX][setCursorY] = 1;
+    ++setAtomsCnt;
+  }
+}
+
+function deleteAtomProbeField() {
+  atomSetArray[setCursorX][setCursorY] = 0;
+  --setAtomsCnt;
 }
 
 /*******************************/
@@ -485,10 +654,9 @@ function showAtoms() {
 /*******************************/
 function calculateBeam() {
   if (rimFree == false) return;
+  if (beamCursorBlocked) return;
 
   let points;
-
-  if (beamCursorBlocked) return;
 
   if (mockup) {
     if (beamCursor == 32) {
@@ -677,11 +845,32 @@ function calculateBeam() {
     }
   }
 
-  // Wenn noch Platz frei istCursor bis zum Loslassen der Return-Taste blockieren
+  // Wenn noch Platz frei ist Cursor bis zum Loslassen der Return-Taste blockieren
   // um unbeabsichtigtes mehrfaches Abfeuern zu verhindern
   if (rimFree) {
     beamCursorBlocked = true;
     questionMark = questionMarks[1];
     document.getElementById(beamCursor).innerHTML = questionMark;
   }
+}
+
+function calculateResult() {
+  hits = 0;
+  missed = 0;
+
+  for (let x = 0; x <= 7; x++) {
+    for (let y = 0; y <= 7; y++) {
+      if (atomArray[x][y] == 1 && atomSetArray[x][y] == 1) {
+        document.getElementById(getID(x,y)).innerHTML = atomHit;
+        ++hits;
+      } else if (atomArray[x][y] == 0 && atomSetArray[x][y] == 1) {
+        document.getElementById(getID(x,y)).innerHTML = atomMissed;
+      } else if (atomArray[x][y] == 1 && atomSetArray[x][y] == 0) {
+        document.getElementById(getID(x,y)).innerHTML = setAtomMark;
+      }
+    }
+  }
+  
+  missed = 4 - hits;
+  score = score + 5 * missed;
 }
