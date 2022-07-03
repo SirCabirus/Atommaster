@@ -100,8 +100,16 @@ let hits = 0;
 
 let missed = 0;
 
-// Flag ob Spiel verloren ist
-let gameLost = false;
+let scoreContainer = {
+  score: 0,
+  hits: 0,
+  missed: 0,
+  wrong: 0
+};
+
+// Flags ob Spiel zu Ende ist.
+let gameEndShow = false;
+let gameEnd = false;
 
 // Statuszeile
 let gamestatus;
@@ -238,7 +246,7 @@ document.onkeyup = function (e) {
   if (e.key == "Control") {
     KEY_CONTROL = false;
   }
-  
+
   // E wurde losgelassen
   if (e.key == "e" || e.key == "E") {
     KEY_E = false;
@@ -283,6 +291,12 @@ function startGame() {
 /* wird                        */
 /*******************************/
 function gameLoop() {
+  if (gameEnd) {
+    // alle im Intervall aufgerufenen Funktionen beenden
+    clearInterval(gameLoopHandle);
+    return;
+  }
+
   // Cursor nach rechts bewegen
   if (KEY_RIGHT) {
     switch (currentMode) {
@@ -385,8 +399,21 @@ function gameLoop() {
   }
 
   // gamestatus = "Versuche: " + trials + space + "Punkte: " + score;
-  gamestatus = "Versuche: " + trials + space + "Punkte: " + score + space + "Treffer: " + hits + space + "Verpasst: " + missed;
+  gamestatus =
+    "Versuche: " +
+    trials +
+    space +
+    "Punkte: " +
+    score +
+    space +
+    "Treffer: " +
+    hits +
+    space +
+    "Verpasst: " +
+    missed;
   document.getElementById("status").innerHTML = gamestatus;
+
+  if (gameEndShow) gameEnd = true;
 }
 
 /**********************************/
@@ -861,16 +888,17 @@ function calculateResult() {
   for (let x = 0; x <= 7; x++) {
     for (let y = 0; y <= 7; y++) {
       if (atomArray[x][y] == 1 && atomSetArray[x][y] == 1) {
-        document.getElementById(getID(x,y)).innerHTML = atomHit;
+        document.getElementById(getID(x, y)).innerHTML = atomHit;
         ++hits;
       } else if (atomArray[x][y] == 0 && atomSetArray[x][y] == 1) {
-        document.getElementById(getID(x,y)).innerHTML = atomMissed;
+        document.getElementById(getID(x, y)).innerHTML = atomMissed;
+        ++missed;
       } else if (atomArray[x][y] == 1 && atomSetArray[x][y] == 0) {
-        document.getElementById(getID(x,y)).innerHTML = setAtomMark;
+        document.getElementById(getID(x, y)).innerHTML = setAtomMark;
       }
     }
   }
-  
-  missed = 4 - hits;
-  score = score + 5 * missed;
+
+  score = score + missed * 5;
+  gameEndShow = true;
 }
