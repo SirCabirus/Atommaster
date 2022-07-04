@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 0.40                           */
-/* 01.06.2022                             */
+/* Version 0.42                           */
+/* 04.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -75,6 +75,9 @@ let setCursorY = 0;
 let setCursorLastX = 0;
 let setCursorLastY = 0;
 
+// Anzahl der zu ermittelnden Atome
+let atomsCnt = 4;
+
 // Anzahl der gesetzten Atome
 let setAtomsCnt = 0;
 
@@ -95,17 +98,9 @@ trials = 0;
 
 // Anzahl der Punkte
 let score = 0;
-
 let hits = 0;
-
 let missed = 0;
-
-let scoreContainer = {
-  score: 0,
-  hits: 0,
-  missed: 0,
-  wrong: 0
-};
+let wrong = 0;
 
 // Flags ob Spiel zu Ende ist.
 let gameEndShow = false;
@@ -128,8 +123,9 @@ let questionMarkCurrent = 0;
 
 let setAtomMark = '<img src="img/atom2-s.png">';
 let atomQuestionMark = '<img src="img/atomQuestionMark.png">';
-let atomHit = '<img src="img/atomHit.png">';
-let atomMissed = '<img src="img/atomMissed.png">';
+let atomRight = '<img src="img/atomRight.png">';
+let atomWrong = '<img src="img/atomWrong.png">';
+let atomMissed = '<img src="img/atom2-s.png">';
 
 let atomImage = '<img src="img/atom2-s.png">';
 let orbA = '<img src="img/orbA.png">';
@@ -410,7 +406,10 @@ function gameLoop() {
     hits +
     space +
     "Verpasst: " +
-    missed;
+    missed + 
+    space +
+    "Falsch: " +
+    wrong;
   document.getElementById("status").innerHTML = gamestatus;
 
   if (gameEndShow) gameEnd = true;
@@ -630,7 +629,7 @@ function toggleSetAtom() {
 }
 
 function setAtomProbeField() {
-  if (setAtomsCnt < 4) {
+  if (setAtomsCnt < atomsCnt) {
     atomSetArray[setCursorX][setCursorY] = 1;
     ++setAtomsCnt;
   }
@@ -641,13 +640,13 @@ function deleteAtomProbeField() {
   --setAtomsCnt;
 }
 
-/*******************************/
-/* Verteilt vier Atome auf dem */
-/* Spielfeld auf zufälligen    */
-/* Positionen                  */
-/*******************************/
+/***********************************/
+/* Verteilt atomsCnt Atome auf dem */
+/* Spielfeld auf zufälligen        */
+/* Positionen                      */
+/***********************************/
 function setAtoms() {
-  for (let i = 1; i <= 4; i++) {
+  for (let i = 1; i <= atomsCnt; i++) {
     let sucess = false;
     do {
       let x = rand(1, 8) - 1;
@@ -882,23 +881,39 @@ function calculateBeam() {
 }
 
 function calculateResult() {
+  if (setAtomsCnt < atomsCnt) {
+    window.alert("Es sind noch keine " + atomsCnt + " Atome gesetzt!");
+    KEY_E = false;
+    return;
+  }
+  
   hits = 0;
   missed = 0;
+  wrong = 0;
 
+  // Auswertung der Treffer und setzen der grafischen Darstellung
   for (let x = 0; x <= 7; x++) {
     for (let y = 0; y <= 7; y++) {
       if (atomArray[x][y] == 1 && atomSetArray[x][y] == 1) {
-        document.getElementById(getID(x, y)).innerHTML = atomHit;
+        document.getElementById(getID(x, y)).innerHTML = atomRight;
         ++hits;
       } else if (atomArray[x][y] == 0 && atomSetArray[x][y] == 1) {
+        document.getElementById(getID(x, y)).innerHTML = atomWrong;
+        ++wrong;
+      } else if (atomArray[x][y] == 1 && atomSetArray[x][y] == 0) {
         document.getElementById(getID(x, y)).innerHTML = atomMissed;
         ++missed;
-      } else if (atomArray[x][y] == 1 && atomSetArray[x][y] == 0) {
-        document.getElementById(getID(x, y)).innerHTML = setAtomMark;
       }
     }
   }
 
+  // Falls der Set-Cursor auf einem nicht gesetzten Feld steht dieses Feld löschen
+  if (atomSetArray[setCursorX][setCursorY] == 0) {
+      document.getElementById(getSetID()).innerHTML = "";
+  }
+  questionMark = questionMarks[0];
+  document.getElementById(beamCursor).innerHTML = questionMark;
+  
   score = score + missed * 5;
   gameEndShow = true;
 }
