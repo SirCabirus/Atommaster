@@ -4,7 +4,7 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 0.42                           */
+/* Version 0.5                           */
 /* 04.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
@@ -121,13 +121,28 @@ let questionMarks = [
 let questionMark = questionMarks[0];
 let questionMarkCurrent = 0;
 
-let setAtomMark = '<img src="img/atom2-s.png">';
+let setAtomMark = '<img src="img/atom.png">';
 let atomQuestionMark = '<img src="img/atomQuestionMark.png">';
 let atomRight = '<img src="img/atomRight.png">';
 let atomWrong = '<img src="img/atomWrong.png">';
-let atomMissed = '<img src="img/atom2-s.png">';
+let atomMissed = '<img src="img/atom.png">';
 
-let atomImage = '<img src="img/atom2-s.png">';
+/*
+let atomSet1 = '<img src="img/atomSetCount1.png">'
+let atomSet2 = '<img src="img/atomSetCount2.png">'
+let atomSet3 = '<img src="img/atomSetCount3.png">'
+let atomSet4 = '<img src="img/atomSetCount4.png">'
+*/
+
+let placedAtoms = [
+  '',
+  '<img src="img/atomSetCount1.png">',
+  '<img src="img/atomSetCount2.png">',
+  '<img src="img/atomSetCount3.png">',
+  '<img src="img/atomSetCount4.png">',
+];
+
+let atomImage = '<img src="img/atom.png">';
 let orbA = '<img src="img/orbA.png">';
 let orbR = '<img src="img/orbR.png">';
 
@@ -405,9 +420,6 @@ function gameLoop() {
     "Treffer: " +
     hits +
     space +
-    "Verpasst: " +
-    missed + 
-    space +
     "Falsch: " +
     wrong;
   document.getElementById("status").innerHTML = gamestatus;
@@ -632,12 +644,14 @@ function setAtomProbeField() {
   if (setAtomsCnt < atomsCnt) {
     atomSetArray[setCursorX][setCursorY] = 1;
     ++setAtomsCnt;
+    document.getElementById("setcnt").innerHTML = placedAtoms[setAtomsCnt];
   }
 }
 
 function deleteAtomProbeField() {
   atomSetArray[setCursorX][setCursorY] = 0;
   --setAtomsCnt;
+  document.getElementById("setcnt").innerHTML = placedAtoms[setAtomsCnt];
 }
 
 /***********************************/
@@ -888,7 +902,7 @@ function calculateResult() {
   }
   
   hits = 0;
-  missed = 0;
+  missed = 0; // TODO wird eigentlich nicht gebraucht
   wrong = 0;
 
   // Auswertung der Treffer und setzen der grafischen Darstellung
@@ -914,6 +928,6 @@ function calculateResult() {
   questionMark = questionMarks[0];
   document.getElementById(beamCursor).innerHTML = questionMark;
   
-  score = score + missed * 5;
+  score = score + wrong * 5;
   gameEndShow = true;
 }
