@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 0.5                           */
-/* 04.06.2022                             */
+/* Version 0.51                           */
+/* 05.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -15,7 +15,7 @@
 /* Globale Variablen und Konstanten   */
 /**************************************/
 
-// Array für die Atome
+// Array für die zu suchenden Atome
 let atomArray = [
   [0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0],
@@ -27,6 +27,7 @@ let atomArray = [
   [0, 0, 0, 0, 0, 0, 0, 0],
 ];
 
+// Array für die gesetzen Atome
 let atomSetArray = [
   [0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0],
@@ -38,11 +39,86 @@ let atomSetArray = [
   [0, 0, 0, 0, 0, 0, 0, 0],
 ];
 
+// Array mit der Zuordnung der Position des Abfrage-Cursors zu den Feldkoordinaten und der Feldrichtung
+const beam2Coordinates = [
+  null,
+  "0.0.incX",
+  "0.1.incX",
+  "0.2.incX",
+  "0.3.incX",
+  "0.4.incX",
+  "0.5.incX",
+  "0.6.incX",
+  "0.7.incX",
+  "0.7.decY",
+  "1.7.decY",
+  "2.7.decY",
+  "3.7.decY",
+  "4.7.decY",
+  "5.7.decY",
+  "6.7.decY",
+  "7.7.decY",
+  "7.7.decX",
+  "7.6.decX",
+  "7.5.decX",
+  "7.4.decX",
+  "7.3.decX",
+  "7.2.decX",
+  "7.1.decX",
+  "7.0.decX",
+  "7.0.incY",
+  "6.0.incY",
+  "5.0.incY",
+  "4.0.incY",
+  "3.0.incY",
+  "2.0.incY",
+  "1.0.incY",
+  "0.0.incY"
+];
+
+// Map mit den Feldkoordinaten und der Richtung des Strahls als Schlüssel und der zugehörigen Rim-ID als Ausgabe
+const coordinates2Beam = new Map([
+  ["0.0.X", 1],
+  ["0.1.X", 2],
+  ["0.2.X", 3],
+  ["0.3.X", 4],
+  ["0.4.X", 5],
+  ["0.5.X", 6],
+  ["0.6.X", 7],
+  ["0.7.X", 8],
+  ["0.7.Y", 9],
+  ["1.7.Y", 10],
+  ["2.7.Y", 11],
+  ["3.7.Y", 12],
+  ["4.7.Y", 13],
+  ["5.7.Y", 14],
+  ["6.7.Y", 15],
+  ["7.7.Y", 16],
+  ["7.7.X", 17],
+  ["7.6.X", 18],
+  ["7.5.X", 19],
+  ["7.4.X", 20],
+  ["7.3.X", 21],
+  ["7.2.X", 22],
+  ["7.1.X", 23],
+  ["7.0.X", 24],
+  ["7.0.Y", 25],
+  ["6.0.Y", 26],
+  ["5.0.Y", 27],
+  ["4.0.Y", 28],
+  ["3.0.Y", 29],
+  ["2.0.Y", 30],
+  ["1.0.Y", 31],
+  ["0.0.Y", 32]
+]);
+
+// Array mit den Modi
 const mode = {
   Beam: Symbol("beam"),
   Set: Symbol("set"),
 };
 
+// aktueller Modus
 let currentMode;
 
 // wird nur während der Entwicklung gebraucht
@@ -88,13 +164,15 @@ for (let i = 0; i < 33; i++) {
 }
 
 // Zähler der genutzten Randflächen
-rimUsed = 0;
+let rimUsed = 0;
 
 // Flag ob es noch freie Randfläche gibt
-rimFree = true;
+let rimFree = true;
+
+let hold = false;
 
 // Anzahl der Versuche
-trials = 0;
+let trials = 0;
 
 // Anzahl der Punkte
 let score = 0;
@@ -113,7 +191,8 @@ let gamestatus;
 let gameLoopHandle;
 let gameLoopIntervall = 100;
 
-// Grafiken
+/*** Grafiken ***/
+// Array für Abfrage-Cursor
 let questionMarks = [
   '<img src="img/questionMarkBlue.png">',
   '<img src="img/questionMarkOrange.png">',
@@ -121,31 +200,27 @@ let questionMarks = [
 let questionMark = questionMarks[0];
 let questionMarkCurrent = 0;
 
-let setAtomMark = '<img src="img/atom.png">';
-let atomQuestionMark = '<img src="img/atomQuestionMark.png">';
-let atomRight = '<img src="img/atomRight.png">';
-let atomWrong = '<img src="img/atomWrong.png">';
-let atomMissed = '<img src="img/atom.png">';
+// Grafiken für das Experimentierfeld im Set-Modus
+let setAtomMark = '<img src="img/atom.png">'; // Cursor-Grafik im Set-Modus
+let atomQuestionMark = '<img src="img/atomQuestionMark.png">'; // TODO wird zur Zeit nicht verwendet
+let atomRight = '<img src="img/atomRight.png">'; // richtig ermitteltes Atom
+let atomWrong = '<img src="img/atomWrong.png">'; // falsch ermitteltes Atom
+let atomMissed = '<img src="img/atom.png">'; // nicht ermittelte Atom
 
-/*
-let atomSet1 = '<img src="img/atomSetCount1.png">'
-let atomSet2 = '<img src="img/atomSetCount2.png">'
-let atomSet3 = '<img src="img/atomSetCount3.png">'
-let atomSet4 = '<img src="img/atomSetCount4.png">'
-*/
-
+// Array mit Grafiken zur Anzeige wie viele Atome vom Spieler gesetzt wurden
 let placedAtoms = [
-  '',
+  "",
   '<img src="img/atomSetCount1.png">',
   '<img src="img/atomSetCount2.png">',
   '<img src="img/atomSetCount3.png">',
   '<img src="img/atomSetCount4.png">',
 ];
 
-let atomImage = '<img src="img/atom.png">';
-let orbA = '<img src="img/orbA.png">';
-let orbR = '<img src="img/orbR.png">';
+let atomImage = '<img src="img/atom.png">';  // Grafik zur Anzeige von Atomen af dem Experimentierfeld
+let orbA = '<img src="img/orbA.png">'; // Anzeige Absorbiert
+let orbR = '<img src="img/orbR.png">'; // Anzeige Reflektiert
 
+// Array mit den Orbs zur Anzeige von Strahleintritt und Strahlaustritt
 let orbs = [
   '<img src="img/orb1.png">',
   '<img src="img/orb2.png">',
@@ -275,7 +350,7 @@ function startGame() {
   currentMode = mode.Beam;
 
   // Abfrage-Cursor anzeigen
-  // der Cursor wird durch die Funktionen moveCursorRight und moveCursorLeft versetzt
+  // der Cursor wird durch die Funktionen moveBeamCursorRight() und moveBeamCursorLeft() versetzt
   document.getElementById(beamCursor).innerHTML = questionMark;
 
   if (mockup) {
@@ -438,8 +513,10 @@ function switchMode() {
       currentMode = mode.Set;
       setCursorBlocked = true;
       document.getElementById(getSetID()).innerHTML = setAtomMark;
-      questionMark = questionMarks[1];
-      document.getElementById(beamCursor).innerHTML = questionMark;
+      if (!hold) {
+        questionMark = questionMarks[1];
+        document.getElementById(beamCursor).innerHTML = questionMark;
+      }
       break;
     case mode.Set:
       currentMode = mode.Beam;
@@ -457,7 +534,7 @@ function switchMode() {
 
 /************************************/
 /* Gibt einen eindeutigen Orb       */
-/* aus dem Orbs-Array zurück        */
+/* aus dem Orb-Array zurück         */
 /************************************/
 function getOrb() {
   let x = 0;
@@ -551,21 +628,55 @@ function setCursorAfterBeam(count) {
   moveBeamCursorRight();
 }
 
+/*******************************/
+/* Ermittelt aus der aktuellen */
+/* Set-Cursor Position die     */
+/* zugehörige Feld-ID des      */
+/* Experimentierfeldes und     */
+/* gibt diese zurück           */
+/*******************************/
 function getSetID() {
   let setID = "f" + setCursorX + setCursorY;
   return setID;
 }
 
+/********************************/
+/* Ermittelt aus der vorherigen */
+/* Set-Cursor Position die      */
+/* zugehörige Feld-ID des       */
+/* Experimentierfeldes und      */
+/* gibt diese zurück            */
+/********************************/
 function getLastSetID() {
   let setLastID = "f" + setCursorLastX + setCursorLastY;
   return setLastID;
 }
 
+/****************************/
+/* Ermittelt die Feld-ID    */
+/* aus den x, y Koordinaten */
+/* und gibt diese zurück    */
+/****************************/
 function getID(x, y) {
   let setID = "f" + x + y;
   return setID;
 }
 
+/************************************/
+/* Ermittelt aus den Koordinaten    */ 
+/* x und y sowie der Strahlrichtung */
+/* die Rim-ID und gibt diese zurück */
+/************************************/
+function getRimID(x, y, direction) {
+  let key = x + "." + y + "." + direction;
+  let rimID = coordinates2Beam.get(key);
+  return rimID;
+}
+
+/********************************/
+/* Setzt den Set-Cursor eine    */ 
+/* Position nach rechts         */
+/********************************/
 function moveSetCursorRight() {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
@@ -581,6 +692,10 @@ function moveSetCursorRight() {
   }
 }
 
+/********************************/
+/* Setzt den Set-Cursor eine    */ 
+/* Position nach links          */
+/********************************/
 function moveSetCursorLeft() {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
@@ -596,6 +711,10 @@ function moveSetCursorLeft() {
   }
 }
 
+/********************************/
+/* Setzt den Set-Cursor eine    */ 
+/* Position nach oben           */
+/********************************/
 function moveSetCursorUp() {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
@@ -611,6 +730,10 @@ function moveSetCursorUp() {
   }
 }
 
+/********************************/
+/* Setzt den Set-Cursor eine    */ 
+/* Position nach unten          */
+/********************************/
 function moveSetCursorDown() {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
@@ -626,6 +749,11 @@ function moveSetCursorDown() {
   }
 }
 
+/********************************/
+/* Setzt und löscht im Wechsel  */
+/* ein Atom an der Position des */
+/* Set-Cursors                  */
+/********************************/
 function toggleSetAtom() {
   if (setAtomCursorBlocked == true) return;
 
@@ -640,6 +768,10 @@ function toggleSetAtom() {
   }
 }
 
+/********************************/
+/* Setzt ein Atom an der        */
+/* Position des Set-Cursors     */
+/********************************/
 function setAtomProbeField() {
   if (setAtomsCnt < atomsCnt) {
     atomSetArray[setCursorX][setCursorY] = 1;
@@ -648,17 +780,21 @@ function setAtomProbeField() {
   }
 }
 
+/********************************/
+/* Löscht ein Atom an der       */
+/* Position des Set-Cursors     */
+/********************************/
 function deleteAtomProbeField() {
   atomSetArray[setCursorX][setCursorY] = 0;
   --setAtomsCnt;
   document.getElementById("setcnt").innerHTML = placedAtoms[setAtomsCnt];
 }
 
-/***********************************/
-/* Verteilt atomsCnt Atome auf dem */
-/* Spielfeld auf zufälligen        */
-/* Positionen                      */
-/***********************************/
+/************************************/
+/* Verteilt atomsCnt Atome auf dem  */
+/* Experimentierfeld auf zufälligen */
+/* Positionen                       */
+/************************************/
 function setAtoms() {
   for (let i = 1; i <= atomsCnt; i++) {
     let sucess = false;
@@ -675,7 +811,7 @@ function setAtoms() {
 
 /*******************************/
 /* Zeigt die Atome auf dem     */
-/* Spielfeld an                */
+/* Experimentierfeld an        */
 /*******************************/
 function showAtoms() {
   for (let x = 0; x <= 7; x++) {
@@ -697,6 +833,31 @@ function calculateBeam() {
   if (beamCursorBlocked) return;
 
   let points;
+
+  // beam2Coordinates
+  let beam = beam2Coordinates[beamCursor].split(".");
+  let cx = beam[0];
+  let cy = beam[1];
+  let investigationMode = beam[2];
+
+  switch (investigationMode) {
+    case "incX":
+      console.log("calculateBeam: West-Ost");
+      break;
+    case "decY":
+      console.log("calculateBeam: Süd-Nord");
+      break;
+    case "decX":
+      console.log("calculateBeam: Ost-West");
+      break;
+    case "incY":
+      console.log("calculateBeam: Nord-Süd");
+      break;
+    default:
+      console.log("Unbekannter investigationMode " + investigationMode);
+  }
+
+  console.log("x: " + cx + " y: " + cy + " Modus: " + investigationMode);
 
   if (mockup) {
     if (beamCursor == 32) {
@@ -881,6 +1042,7 @@ function calculateBeam() {
     // Abfrage-Cursor parken wenn kein Platz mehr frei ist und Status merken
     if (rimUsed >= 32) {
       rimFree = false;
+      hold = true;
       document.getElementById("hold").innerHTML = questionMark;
     }
   }
@@ -894,13 +1056,22 @@ function calculateBeam() {
   }
 }
 
+/*************************************/
+/* Vergleicht die vom Spieler        */
+/* gesetzten Atome mit dem vom       */
+/* Computer versteckten, setzt dazu  */
+/* die entsprechenden Grafiken auf   */
+/* dem Eperimentierfeld und          */
+/* ermittelt den Punktestand         */
+/*************************************/
 function calculateResult() {
+  // Spieler informieren, dass vor der Auswertung erst alle Atome gesetzt sein müssen 
   if (setAtomsCnt < atomsCnt) {
     window.alert("Es sind noch keine " + atomsCnt + " Atome gesetzt!");
     KEY_E = false;
     return;
   }
-  
+
   hits = 0;
   missed = 0; // TODO wird eigentlich nicht gebraucht
   wrong = 0;
@@ -923,11 +1094,18 @@ function calculateResult() {
 
   // Falls der Set-Cursor auf einem nicht gesetzten Feld steht dieses Feld löschen
   if (atomSetArray[setCursorX][setCursorY] == 0) {
-      document.getElementById(getSetID()).innerHTML = "";
+    document.getElementById(getSetID()).innerHTML = "";
   }
+
+  // Fragezeichen-Cursor wieder herstellen wenn er nicht im Hold steht
   questionMark = questionMarks[0];
-  document.getElementById(beamCursor).innerHTML = questionMark;
-  
+  if (!hold) {
+    document.getElementById(beamCursor).innerHTML = questionMark;
+  }
+
+  // Punktestand festlegen
   score = score + wrong * 5;
+  
+  // Flag setzen dass das Spielende erreicht ist, aber noch einmal angezeigt werden soll
   gameEndShow = true;
 }
