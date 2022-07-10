@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 0.51                           */
-/* 05.06.2022                             */
+/* Version 1.0                           */
+/* 10.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -73,7 +73,7 @@ const beam2Coordinates = [
   "3.0.incY",
   "2.0.incY",
   "1.0.incY",
-  "0.0.incY"
+  "0.0.incY",
 ];
 
 // Map mit den Feldkoordinaten und der Richtung des Strahls als Schlüssel und der zugehörigen Rim-ID als Ausgabe
@@ -109,7 +109,7 @@ const coordinates2Beam = new Map([
   ["3.0.Y", 29],
   ["2.0.Y", 30],
   ["1.0.Y", 31],
-  ["0.0.Y", 32]
+  ["0.0.Y", 32],
 ]);
 
 // Array mit den Modi
@@ -122,7 +122,7 @@ const mode = {
 let currentMode;
 
 // wird nur während der Entwicklung gebraucht
-let mockup = true;
+let mockup = false;
 
 // sollen die Orbs in zufälliger Reihenfolge ausgegeben werden
 let randomOrbs = true;
@@ -216,7 +216,7 @@ let placedAtoms = [
   '<img src="img/atomSetCount4.png">',
 ];
 
-let atomImage = '<img src="img/atom.png">';  // Grafik zur Anzeige von Atomen af dem Experimentierfeld
+let atomImage = '<img src="img/atom.png">'; // Grafik zur Anzeige von Atomen af dem Experimentierfeld
 let orbA = '<img src="img/orbA.png">'; // Anzeige Absorbiert
 let orbR = '<img src="img/orbR.png">'; // Anzeige Reflektiert
 
@@ -353,15 +353,15 @@ function startGame() {
   // der Cursor wird durch die Funktionen moveBeamCursorRight() und moveBeamCursorLeft() versetzt
   document.getElementById(beamCursor).innerHTML = questionMark;
 
-  if (mockup) {
+  if (true) {
     // Atome speichern
 
-    atomArray[1][0] = 1;
-    atomArray[2][2] = 1;
-    atomArray[0][4] = 1;
-    atomArray[7][4] = 1;
+    // atomArray[1][0] = 1;
+    // atomArray[2][2] = 1;
+    // atomArray[0][4] = 1;
+    // atomArray[7][4] = 1;
 
-    // setAtoms();
+    setAtoms();
 
     // Atome anzeigen
     // showAtoms();
@@ -663,18 +663,19 @@ function getID(x, y) {
 }
 
 /************************************/
-/* Ermittelt aus den Koordinaten    */ 
+/* Ermittelt aus den Koordinaten    */
 /* x und y sowie der Strahlrichtung */
 /* die Rim-ID und gibt diese zurück */
 /************************************/
 function getRimID(x, y, direction) {
-  let key = x + "." + y + "." + direction;
+  let cutDirec = direction.substring(3, 4);
+  let key = x + "." + y + "." + cutDirec;
   let rimID = coordinates2Beam.get(key);
   return rimID;
 }
 
 /********************************/
-/* Setzt den Set-Cursor eine    */ 
+/* Setzt den Set-Cursor eine    */
 /* Position nach rechts         */
 /********************************/
 function moveSetCursorRight() {
@@ -693,7 +694,7 @@ function moveSetCursorRight() {
 }
 
 /********************************/
-/* Setzt den Set-Cursor eine    */ 
+/* Setzt den Set-Cursor eine    */
 /* Position nach links          */
 /********************************/
 function moveSetCursorLeft() {
@@ -712,7 +713,7 @@ function moveSetCursorLeft() {
 }
 
 /********************************/
-/* Setzt den Set-Cursor eine    */ 
+/* Setzt den Set-Cursor eine    */
 /* Position nach oben           */
 /********************************/
 function moveSetCursorUp() {
@@ -731,7 +732,7 @@ function moveSetCursorUp() {
 }
 
 /********************************/
-/* Setzt den Set-Cursor eine    */ 
+/* Setzt den Set-Cursor eine    */
 /* Position nach unten          */
 /********************************/
 function moveSetCursorDown() {
@@ -836,215 +837,95 @@ function calculateBeam() {
 
   // beam2Coordinates
   let beam = beam2Coordinates[beamCursor].split(".");
-  let cx = beam[0];
-  let cy = beam[1];
-  let investigationMode = beam[2];
 
-  switch (investigationMode) {
+  let beamContainer = {
+    mode: beam[2],
+    ex: 0,
+    ey: 0,
+    x: parseInt(beam[0]),
+    y: parseInt(beam[1]),
+    beamEntry: beamCursor,
+    beamExit: null,
+    resultText: null,
+    points: 0,
+    beamEnd: false,
+    count: 0, // TODO als Schutz während Entwicklung vor Dauerschleife, kommt weg sobald Strahlberechnung fertig
+  };
+
+  switch (beamContainer.mode) {
     case "incX":
-      console.log("calculateBeam: West-Ost");
+      beamContainer.x--;
       break;
     case "decY":
-      console.log("calculateBeam: Süd-Nord");
+      beamContainer.y++;
       break;
     case "decX":
-      console.log("calculateBeam: Ost-West");
+      beamContainer.x++;
       break;
     case "incY":
-      console.log("calculateBeam: Nord-Süd");
+      beamContainer.y--;
       break;
     default:
       console.log("Unbekannter investigationMode " + investigationMode);
   }
 
-  console.log("x: " + cx + " y: " + cy + " Modus: " + investigationMode);
+  beamContainer.ex = beamContainer.x;
+  beamContainer.ey = beamContainer.y;
 
-  if (mockup) {
-    if (beamCursor == 32) {
-      erg[32] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(32).innerHTML = orbR;
-      trials++;
-    } else if (beamCursor == 31) {
-      erg[31] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(31).innerHTML = orbA;
-      trials++;
-    } else if (beamCursor == 30) {
-      erg[30] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(30).innerHTML = orbR;
-      trials++;
-    } else if (beamCursor == 29 || beamCursor == 23) {
-      let beam = getOrb();
-      erg[29] = true;
-      erg[23] = true;
-      points = 2;
-      setCursorAfterBeam(points);
-      document.getElementById(29).innerHTML = beam;
-      document.getElementById(23).innerHTML = beam;
-      trials++;
-    } else if (beamCursor == 28 || beamCursor == 13) {
-      let beam = getOrb();
-      erg[13] = true;
-      erg[28] = true;
-      points = 2;
-      setCursorAfterBeam(points);
-      document.getElementById(13).innerHTML = beam;
-      document.getElementById(28).innerHTML = beam;
-      trials++;
-    } else if (beamCursor == 27 || beamCursor == 14) {
-      let beam = getOrb();
-      erg[14] = true;
-      erg[27] = true;
-      points = 2;
-      setCursorAfterBeam(points);
-      document.getElementById(14).innerHTML = beam;
-      document.getElementById(27).innerHTML = beam;
-      trials++;
-    } else if (beamCursor == 12 || beamCursor == 26) {
-      let beam = getOrb();
-      erg[12] = true;
-      erg[26] = true;
-      points = 2;
-      setCursorAfterBeam(points);
-      document.getElementById(12).innerHTML = beam;
-      document.getElementById(26).innerHTML = beam;
-      trials++;
-    } else if (beamCursor == 25) {
-      erg[25] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(25).innerHTML = orbA;
-      trials++;
-    } else if (beamCursor == 24) {
-      erg[24] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(24).innerHTML = orbA;
-      trials++;
-    } else if (beamCursor == 22) {
-      erg[22] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(22).innerHTML = orbA;
-      trials++;
-    } else if (beamCursor == 21) {
-      erg[21] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(21).innerHTML = orbR;
-      trials++;
-    } else if (beamCursor == 20) {
-      erg[20] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(20).innerHTML = orbA;
-      trials++;
-    } else if (beamCursor == 19) {
-      erg[19] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(19).innerHTML = orbR;
-      trials++;
-    } else if (beamCursor == 7 || beamCursor == 18) {
-      let beam = getOrb();
-      erg[7] = true;
-      erg[18] = true;
-      points = 2;
-      setCursorAfterBeam(points);
-      document.getElementById(7).innerHTML = beam;
-      document.getElementById(18).innerHTML = beam;
-      trials++;
-    } else if (beamCursor == 8 || beamCursor == 17) {
-      let beam = getOrb();
-      erg[8] = true;
-      erg[17] = true;
-      points = 2;
-      setCursorAfterBeam(points);
-      document.getElementById(8).innerHTML = beam;
-      document.getElementById(17).innerHTML = beam;
-      trials++;
-    } else if (beamCursor == 16) {
-      erg[16] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(16).innerHTML = orbA;
-      trials++;
-    } else if (beamCursor == 10 || beamCursor == 15) {
-      let beam = getOrb();
-      erg[10] = true;
-      erg[15] = true;
-      points = 2;
-      setCursorAfterBeam(points);
-      document.getElementById(10).innerHTML = beam;
-      document.getElementById(15).innerHTML = beam;
-      trials++;
-    } else if (beamCursor == 11) {
-      erg[11] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(11).innerHTML = orbA;
-      trials++;
-    } else if (beamCursor == 9) {
-      erg[9] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(9).innerHTML = orbA;
-      trials++;
-    } else if (beamCursor == 6) {
-      erg[6] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(6).innerHTML = orbR;
-      trials++;
-    } else if (beamCursor == 5) {
-      erg[5] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(5).innerHTML = orbA;
-      trials++;
-    } else if (beamCursor == 4) {
-      erg[4] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(4).innerHTML = orbR;
-      trials++;
-    } else if (beamCursor == 3) {
-      erg[3] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(3).innerHTML = orbA;
-      trials++;
-    } else if (beamCursor == 2) {
-      erg[2] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(2).innerHTML = orbA;
-      trials++;
-    } else if (beamCursor == 1) {
-      erg[1] = true;
-      points = 1;
-      setCursorAfterBeam(points);
-      document.getElementById(1).innerHTML = orbA;
-      trials++;
+  do {
+    beamContainer.count++;
+    switch (beamContainer.mode) {
+      case "incX":
+        console.log("calculateBeam: West-Ost");
+        moveBeam(beamContainer);
+        break;
+      case "decY":
+        console.log("calculateBeam: Süd-Nord");
+        moveBeam(beamContainer);
+        break;
+      case "decX":
+        console.log("calculateBeam: Ost-West");
+        moveBeam(beamContainer);
+        break;
+      case "incY":
+        console.log("calculateBeam: Nord-Süd");
+        moveBeam(beamContainer);
+        break;
+      default:
+        console.log("Unbekannter investigationMode " + investigationMode);
     }
 
-    // Punktestand abgleichen
-    score = score + points;
+    console.log(
+      "x: " +
+        beamContainer.x +
+        " y: " +
+        beamContainer.y +
+        " Modus: " +
+        beamContainer.mode +
+        " Count: " +
+        beamContainer.count +
+        " beamEnd: " +
+        beamContainer.beamEnd +
+        " Result: " +
+        beamContainer.resultText
+    );
+  } while (beamContainer.beamEnd == false && beamContainer.count < 30);
 
-    // Anzahl genutzter Randfelder erhöhen
-    rimUsed = rimUsed + points; // TODO rimUsed hat immer den gleichen Wert wie score
+  ++trials;
+  points = beamContainer.points;
 
-    // Abfrage-Cursor parken wenn kein Platz mehr frei ist und Status merken
-    if (rimUsed >= 32) {
-      rimFree = false;
-      hold = true;
-      document.getElementById("hold").innerHTML = questionMark;
-    }
+  // Punktestand abgleichen
+  // score = score + points;
+  score = score + beamContainer.points;
+
+  // Anzahl genutzter Randfelder erhöhen
+  rimUsed = rimUsed + points; // TODO rimUsed hat immer den gleichen Wert wie score
+
+  // Abfrage-Cursor parken wenn kein Platz mehr frei ist und Status merken
+  if (rimUsed >= 32) {
+    rimFree = false;
+    hold = true;
+    document.getElementById("hold").innerHTML = questionMark;
   }
 
   // Wenn noch Platz frei ist Cursor bis zum Loslassen der Return-Taste blockieren
@@ -1056,6 +937,277 @@ function calculateBeam() {
   }
 }
 
+function moveBeam(beamContainer) {
+  // Hauptstrahl
+  let fieldMB = {
+    x: undefined,
+    y: undefined,
+    valid: true,
+  };
+
+  // Nebenstrahl links
+  let fieldLB = {
+    x: undefined,
+    y: undefined,
+    valid: false,
+  };
+
+  // Nebenstrahl rechts
+  let fieldRB = {
+    x: undefined,
+    y: undefined,
+    valid: false,
+  };
+
+  if (beamContainer.mode == "incX") {
+    console.log("moveBeam() incX läuft.");
+    if (beamContainer.x < 7) {
+      beamContainer.x++;
+      if (beamContainer.y > 0) {
+        fieldLB.x = beamContainer.x;
+        fieldLB.y = beamContainer.y - 1;
+        fieldLB.valid = true;
+      }
+      if (beamContainer.y < 7) {
+        fieldRB.x = beamContainer.x;
+        fieldRB.y = beamContainer.y + 1;
+        fieldRB.valid = true;
+      }
+    } else {
+      // Strahlenende erreicht
+      beamContainer.resultText = "*";
+      beamContainer.beamEnd = true;
+      beamContainer.points = 2;
+      let eB = getRimID(beamContainer.x, beamContainer.y, beamContainer.mode);
+      let beam = getOrb();
+      erg[beamContainer.beamEntry] = true;
+      erg[eB] = true;
+      setCursorAfterBeam(beamContainer.points);
+      document.getElementById(beamContainer.beamEntry).innerHTML = beam;
+      document.getElementById(eB).innerHTML = beam;
+      console.log("Strahlende: Anfang: " + beamContainer.beamEntry + " Ende: " + eB);
+      // TODO Strahlende
+    }
+  } else if (beamContainer.mode == "decY") {
+    console.log("moveBeam() decY läuft.");
+    if (beamContainer.y > 0) {
+      beamContainer.y--;
+      if (beamContainer.x > 0) {
+        fieldLB.x = beamContainer.x - 1;
+        fieldLB.y = beamContainer.y;
+        fieldLB.valid = true;
+      }
+      if (beamContainer.x < 7) {
+        fieldRB.x = beamContainer.x + 1;
+        fieldRB.y = beamContainer.y;
+        fieldRB.valid = true;
+      }
+    } else {
+      // Strahlenende erreicht
+      beamContainer.resultText = "*";
+      beamContainer.beamEnd = true;
+      beamContainer.points = 2;
+      let eB = getRimID(beamContainer.x, beamContainer.y, beamContainer.mode);
+      let beam = getOrb();
+      erg[beamContainer.beamEntry] = true;
+      erg[eB] = true;
+      setCursorAfterBeam(beamContainer.points);
+      document.getElementById(beamContainer.beamEntry).innerHTML = beam;
+      document.getElementById(eB).innerHTML = beam;
+      console.log("Strahlende: Anfang: " + beamContainer.beamEntry + " Ende: " + eB);
+      // TODO Strahlende
+    }
+  } else if (beamContainer.mode == "decX") {
+    console.log("moveBeam() decX läuft.");
+    if (beamContainer.x > 0) {
+      beamContainer.x--;
+      if (beamContainer.y > 0) {
+        fieldRB.x = beamContainer.x;
+        fieldRB.y = beamContainer.y - 1;
+        fieldRB.valid = true;
+      }
+      if (beamContainer.x < 7) {
+        fieldLB.x = beamContainer.x;
+        fieldLB.y = beamContainer.y + 1;
+        fieldLB.valid = true;
+      }
+    } else {
+      // Strahlenende erreicht
+      beamContainer.resultText = "*";
+      beamContainer.beamEnd = true;
+      beamContainer.points = 2;
+      let eB = getRimID(beamContainer.x, beamContainer.y, beamContainer.mode);
+      let beam = getOrb();
+      erg[beamContainer.beamEntry] = true;
+      erg[eB] = true;
+      setCursorAfterBeam(beamContainer.points);
+      document.getElementById(beamContainer.beamEntry).innerHTML = beam;
+      document.getElementById(eB).innerHTML = beam;
+      console.log("Strahlende: Anfang: " + beamContainer.beamEntry + " Ende: " + eB);
+      // TODO Strahlende
+    }
+  } else if (beamContainer.mode == "incY") {
+    console.log("moveBeam() incY läuft.");
+    if (beamContainer.y < 7) {
+      beamContainer.y++;
+      if (beamContainer.x > 0) {
+        fieldRB.x = beamContainer.x - 1;
+        fieldRB.y = beamContainer.y;
+        fieldRB.valid = true;
+      }
+      if (beamContainer.x < 7) {
+        fieldLB.x = beamContainer.x + 1;
+        fieldLB.y = beamContainer.y;
+        fieldLB.valid = true;
+      }
+    } else {
+      // Strahlenende erreicht
+      beamContainer.resultText = "*";
+      beamContainer.beamEnd = true;
+      beamContainer.points = 2;
+      let eB = getRimID(beamContainer.x, beamContainer.y, beamContainer.mode);
+      let beam = getOrb();
+      erg[beamContainer.beamEntry] = true;
+      erg[eB] = true;
+      setCursorAfterBeam(beamContainer.points);
+      document.getElementById(beamContainer.beamEntry).innerHTML = beam;
+      document.getElementById(eB).innerHTML = beam;
+      console.log("Strahlende: Anfang: " + beamContainer.beamEntry + " Ende: " + eB);
+      // TODO Strahlende
+    }
+  }
+  fieldMB.x = beamContainer.x;
+  fieldMB.y = beamContainer.y;
+  beamContainer = checkFields(fieldMB, fieldLB, fieldRB, beamContainer);
+  return beamContainer;
+}
+
+function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
+  // Überprüfen auf Richtungsänderung, dabei zunächst Reflexion durch zwei Atome checken
+  if (fieldLB.valid && fieldRB.valid) {
+    if (
+      atomArray[fieldMB.x][fieldMB.y] == 0 &&
+      atomArray[fieldLB.x][fieldLB.y] == 1 &&
+      atomArray[fieldRB.x][fieldRB.y] == 1
+    ) {
+      beamContainer.resultText = "R";
+      beamContainer.beamEnd = true;
+      beamContainer.points = 1;
+      erg[beamContainer.beamEntry] = true;
+      setCursorAfterBeam(beamContainer.points);
+      document.getElementById(beamContainer.beamEntry).innerHTML = orbR;
+      return beamContainer;
+    }
+  }
+  // Überprüfen auf Richtungsänderung
+  // Linker Nebenstrahl
+  if (fieldLB.valid) {
+    if (
+      atomArray[fieldLB.x][fieldLB.y] == 1 &&
+      atomArray[fieldMB.x][fieldMB.y] == 0
+    ) {
+      switch (beamContainer.mode) {
+        case "incX":
+          beamContainer.x--;
+          beamContainer.mode = "incY";
+          console.log("checkfields: West-Ost -> Nord-Süd");
+          break;
+        case "decY":
+          beamContainer.y++;
+          beamContainer.mode = "incX";
+          console.log("checkfields: Süd-Nord -> West-Ost");
+          break;
+        case "decX":
+          beamContainer.x++;
+          beamContainer.mode = "decY";
+          console.log("checkfields: Ost-West -> Süd-Nord");
+          break;
+        case "incY":
+          beamContainer.y--;
+          beamContainer.mode = "decX";
+          console.log("checkfields: Nord-Süd -> Ost-West");
+          break;
+        default:
+          console.log("Unbekannter investigationMode " + investigationMode);
+      }
+      // wenn nach einer Richtungsänderung das aktuelle Feld mit dem Eintrittsfeld identisch ist haben wir eine Reflektion
+      if (
+        beamContainer.x == beamContainer.ex &&
+        beamContainer.y == beamContainer.ey
+      ) {
+        console.log("Reflektion!");
+        beamContainer.resultText = "R";
+        beamContainer.beamEnd = true;
+        beamContainer.points = 1;
+        erg[beamContainer.beamEntry] = true;
+        setCursorAfterBeam(beamContainer.points);
+        document.getElementById(beamContainer.beamEntry).innerHTML = orbR;
+      }
+      return beamContainer;
+    }
+  }
+
+  // Rechter Nebenstrahl
+  if (fieldRB.valid) {
+    if (
+      atomArray[fieldRB.x][fieldRB.y] == 1 &&
+      atomArray[fieldMB.x][fieldMB.y] == 0
+    ) {
+      switch (beamContainer.mode) {
+        case "incX":
+          beamContainer.x--;
+          beamContainer.mode = "decY";
+          console.log("checkfields: West-Ost -> Süd-Nord");
+          break;
+        case "decY":
+          beamContainer.y++;
+          beamContainer.mode = "decX";
+          console.log("checkfields: Süd-Nord -> Ost-West");
+          break;
+        case "decX":
+          beamContainer.x++;
+          beamContainer.mode = "incY";
+          console.log("checkfields: Ost-West -> Nord-Süd");
+          break;
+        case "incY":
+          beamContainer.y--;
+          beamContainer.mode = "incX";
+          console.log("checkfields: Nord-Süd -> West-Ost");
+          break;
+        default:
+          console.log("Unbekannter investigationMode " + investigationMode);
+      }
+      // wenn nach einer Richtungsänderung das aktuelle Feld mit dem Eintrittsfeld identisch ist haben wir eine Reflektion
+      if (
+        beamContainer.x == beamContainer.ex &&
+        beamContainer.y == beamContainer.ey
+      ) {
+        beamContainer.resultText = "R";
+        beamContainer.beamEnd = true;
+        beamContainer.points = 1;
+        erg[beamContainer.beamEntry] = true;
+        setCursorAfterBeam(beamContainer.points);
+        document.getElementById(beamContainer.beamEntry).innerHTML = orbR;
+        console.log("Reflektion!");
+      }
+      return beamContainer;
+    }
+  }
+
+  // Überprüfen auf Treffer / Absorbtion
+  if (atomArray[fieldMB.x][fieldMB.y] == 1) {
+    beamContainer.resultText = "A";
+    beamContainer.beamEnd = true;
+    beamContainer.points = 1;
+    erg[beamContainer.beamEntry] = true;
+    setCursorAfterBeam(beamContainer.points);
+    document.getElementById(beamContainer.beamEntry).innerHTML = orbA;
+    return beamContainer;
+  }
+
+  return beamContainer;
+}
+
 /*************************************/
 /* Vergleicht die vom Spieler        */
 /* gesetzten Atome mit dem vom       */
@@ -1065,7 +1217,7 @@ function calculateBeam() {
 /* ermittelt den Punktestand         */
 /*************************************/
 function calculateResult() {
-  // Spieler informieren, dass vor der Auswertung erst alle Atome gesetzt sein müssen 
+  // Spieler informieren, dass vor der Auswertung erst alle Atome gesetzt sein müssen
   if (setAtomsCnt < atomsCnt) {
     window.alert("Es sind noch keine " + atomsCnt + " Atome gesetzt!");
     KEY_E = false;
@@ -1105,7 +1257,7 @@ function calculateResult() {
 
   // Punktestand festlegen
   score = score + wrong * 5;
-  
+
   // Flag setzen dass das Spielende erreicht ist, aber noch einmal angezeigt werden soll
   gameEndShow = true;
 }
