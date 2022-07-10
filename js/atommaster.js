@@ -4,7 +4,7 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 1.0                           */
+/* Version 1.1                           */
 /* 10.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
@@ -353,19 +353,11 @@ function startGame() {
   // der Cursor wird durch die Funktionen moveBeamCursorRight() und moveBeamCursorLeft() versetzt
   document.getElementById(beamCursor).innerHTML = questionMark;
 
-  if (true) {
-    // Atome speichern
+  // Atome speichern
+  setAtoms();
 
-    // atomArray[1][0] = 1;
-    // atomArray[2][2] = 1;
-    // atomArray[0][4] = 1;
-    // atomArray[7][4] = 1;
-
-    setAtoms();
-
-    // Atome anzeigen
-    // showAtoms();
-  }
+  // Atome anzeigen
+  // showAtoms();
 
   // Aufruf von Funktionen, die im zeitlichen Intervall immer wieder aufgerufen werden
   gameLoopHandle = setInterval(gameLoop, gameLoopIntervall);
@@ -937,6 +929,10 @@ function calculateBeam() {
   }
 }
 
+/**********************************/
+/* Bewegt den Untersuchungsstrahl */
+/* über das Experementierfeld     */
+/**********************************/
 function moveBeam(beamContainer) {
   // Hauptstrahl
   let fieldMB = {
@@ -975,18 +971,7 @@ function moveBeam(beamContainer) {
       }
     } else {
       // Strahlenende erreicht
-      beamContainer.resultText = "*";
-      beamContainer.beamEnd = true;
-      beamContainer.points = 2;
-      let eB = getRimID(beamContainer.x, beamContainer.y, beamContainer.mode);
-      let beam = getOrb();
-      erg[beamContainer.beamEntry] = true;
-      erg[eB] = true;
-      setCursorAfterBeam(beamContainer.points);
-      document.getElementById(beamContainer.beamEntry).innerHTML = beam;
-      document.getElementById(eB).innerHTML = beam;
-      console.log("Strahlende: Anfang: " + beamContainer.beamEntry + " Ende: " + eB);
-      // TODO Strahlende
+      setBeamEnd(beamContainer);
     }
   } else if (beamContainer.mode == "decY") {
     console.log("moveBeam() decY läuft.");
@@ -1004,18 +989,7 @@ function moveBeam(beamContainer) {
       }
     } else {
       // Strahlenende erreicht
-      beamContainer.resultText = "*";
-      beamContainer.beamEnd = true;
-      beamContainer.points = 2;
-      let eB = getRimID(beamContainer.x, beamContainer.y, beamContainer.mode);
-      let beam = getOrb();
-      erg[beamContainer.beamEntry] = true;
-      erg[eB] = true;
-      setCursorAfterBeam(beamContainer.points);
-      document.getElementById(beamContainer.beamEntry).innerHTML = beam;
-      document.getElementById(eB).innerHTML = beam;
-      console.log("Strahlende: Anfang: " + beamContainer.beamEntry + " Ende: " + eB);
-      // TODO Strahlende
+      setBeamEnd(beamContainer);
     }
   } else if (beamContainer.mode == "decX") {
     console.log("moveBeam() decX läuft.");
@@ -1033,18 +1007,7 @@ function moveBeam(beamContainer) {
       }
     } else {
       // Strahlenende erreicht
-      beamContainer.resultText = "*";
-      beamContainer.beamEnd = true;
-      beamContainer.points = 2;
-      let eB = getRimID(beamContainer.x, beamContainer.y, beamContainer.mode);
-      let beam = getOrb();
-      erg[beamContainer.beamEntry] = true;
-      erg[eB] = true;
-      setCursorAfterBeam(beamContainer.points);
-      document.getElementById(beamContainer.beamEntry).innerHTML = beam;
-      document.getElementById(eB).innerHTML = beam;
-      console.log("Strahlende: Anfang: " + beamContainer.beamEntry + " Ende: " + eB);
-      // TODO Strahlende
+      setBeamEnd(beamContainer);
     }
   } else if (beamContainer.mode == "incY") {
     console.log("moveBeam() incY läuft.");
@@ -1062,18 +1025,7 @@ function moveBeam(beamContainer) {
       }
     } else {
       // Strahlenende erreicht
-      beamContainer.resultText = "*";
-      beamContainer.beamEnd = true;
-      beamContainer.points = 2;
-      let eB = getRimID(beamContainer.x, beamContainer.y, beamContainer.mode);
-      let beam = getOrb();
-      erg[beamContainer.beamEntry] = true;
-      erg[eB] = true;
-      setCursorAfterBeam(beamContainer.points);
-      document.getElementById(beamContainer.beamEntry).innerHTML = beam;
-      document.getElementById(eB).innerHTML = beam;
-      console.log("Strahlende: Anfang: " + beamContainer.beamEntry + " Ende: " + eB);
-      // TODO Strahlende
+      setBeamEnd(beamContainer);
     }
   }
   fieldMB.x = beamContainer.x;
@@ -1082,6 +1034,11 @@ function moveBeam(beamContainer) {
   return beamContainer;
 }
 
+/*************************************/
+/* Überprüft den Untersuchungsstrahl */
+/* auf Richtungsänderung, Absorbtion */
+/* und Reflektion                    */
+/*************************************/
 function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
   // Überprüfen auf Richtungsänderung, dabei zunächst Reflexion durch zwei Atome checken
   if (fieldLB.valid && fieldRB.valid) {
@@ -1206,6 +1163,27 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
   }
 
   return beamContainer;
+}
+
+/*****************************************/
+/* Wenn ein Strahl das Experimentierfeld */
+/* durchquert hat, wird hier der Anfang  */
+/* und das Ende des Strahls mit zwei     */
+/* gleichfarbigen Kugeln markiert        */
+/*****************************************/
+function setBeamEnd(beamContainer) {
+  beamContainer.resultText = "*";
+  beamContainer.beamEnd = true;
+  beamContainer.points = 2;
+  let beamEntry = beamContainer.beamEntry;
+  let beamEnd = getRimID(beamContainer.x, beamContainer.y, beamContainer.mode);
+  let beam = getOrb();
+  erg[beamEntry] = true;
+  erg[beamEnd] = true;
+  setCursorAfterBeam(beamContainer.points);
+  document.getElementById(beamEntry).innerHTML = beam;
+  document.getElementById(beamEnd).innerHTML = beam;
+  console.log("Strahlende: Anfang: " + beamEntry + " Ende: " + beamEnd);
 }
 
 /*************************************/
