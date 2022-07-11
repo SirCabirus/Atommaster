@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 1.1                           */
-/* 10.06.2022                             */
+/* Version 1.2                            */
+/* 11.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -39,7 +39,7 @@ let atomSetArray = [
   [0, 0, 0, 0, 0, 0, 0, 0],
 ];
 
-// Array mit der Zuordnung der Position des Abfrage-Cursors zu den Feldkoordinaten und der Feldrichtung
+// Array mit der Zuordnung der Position des Abfrage-Cursors (Rim-ID) zu den Feldkoordinaten und der Feldrichtung
 const beam2Coordinates = [
   null,
   "0.0.incX",
@@ -114,15 +114,12 @@ const coordinates2Beam = new Map([
 
 // Array mit den Modi
 const mode = {
-  Beam: Symbol("beam"),
-  Set: Symbol("set"),
+  Beam: Symbol("beam"), // Abfrage-Cursor bewegen, Untersuchungsstrahl abfeuern
+  Set: Symbol("set"), // Atome auf dem Experementierfeld setzen
 };
 
 // aktueller Modus
 let currentMode;
-
-// wird nur während der Entwicklung gebraucht
-let mockup = false;
 
 // sollen die Orbs in zufälliger Reihenfolge ausgegeben werden
 let randomOrbs = true;
@@ -141,7 +138,7 @@ for (let i = 0; i < 16; i++) {
 // Zeiger auf aktuellen Orb falls keine Zufallsreihenfolge
 let currOrb = 0;
 
-// Position des Abfrage-Cursors
+// Position (Rim-ID) des Abfrage-Cursors
 let beamCursor = 1;
 let lastBeamCursor = beamCursor;
 
@@ -157,7 +154,7 @@ let atomsCnt = 4;
 // Anzahl der gesetzten Atome
 let setAtomsCnt = 0;
 
-// Speicher für die belegten Abfragefelder
+// Speicher für die belegten Abfragefelder (Rim-IDs)
 let erg = [33];
 for (let i = 0; i < 33; i++) {
   erg[i] = false;
@@ -166,9 +163,10 @@ for (let i = 0; i < 33; i++) {
 // Zähler der genutzten Randflächen
 let rimUsed = 0;
 
-// Flag ob es noch freie Randfläche gibt
+// Flag ob es noch freie Randfläche (Rim-ID) gibt
 let rimFree = true;
 
+// Flag ob Abrage-Cursor geparkt ist weil es keine freie Randfläche mehr gibt
 let hold = false;
 
 // Anzahl der Versuche
@@ -194,8 +192,8 @@ let gameLoopIntervall = 100;
 /*** Grafiken ***/
 // Array für Abfrage-Cursor
 let questionMarks = [
-  '<img src="img/questionMarkBlue.png">',
-  '<img src="img/questionMarkOrange.png">',
+  '<img src="img/questionMarkBlue.png">', // normale Farbe blau
+  '<img src="img/questionMarkOrange.png">', // orange Farbe wenn Abfrage-Cursor blockiert ist
 ];
 let questionMark = questionMarks[0];
 let questionMarkCurrent = 0;
@@ -240,7 +238,7 @@ let orbs = [
   '<img src="img/orb16.png">',
 ];
 
-// fünf Leerzeichen
+// fünf Leerzeichen zur Trennung der Ausgabeinformationen in der Statuszeile
 const space = "\xa0\xa0\xa0\xa0\xa0";
 
 // Variablen für die Tastatureingaben
@@ -347,13 +345,14 @@ document.onkeyup = function (e) {
 /*    aufgerufen                      */
 /**************************************/
 function startGame() {
+  // Abfrage-Modus aktivieren
   currentMode = mode.Beam;
 
   // Abfrage-Cursor anzeigen
   // der Cursor wird durch die Funktionen moveBeamCursorRight() und moveBeamCursorLeft() versetzt
   document.getElementById(beamCursor).innerHTML = questionMark;
 
-  // Atome speichern
+  // Atome zufällig auf dem Experementierfeld verteilen
   setAtoms();
 
   // Atome anzeigen
@@ -838,10 +837,8 @@ function calculateBeam() {
     y: parseInt(beam[1]),
     beamEntry: beamCursor,
     beamExit: null,
-    resultText: null,
     points: 0,
     beamEnd: false,
-    count: 0, // TODO als Schutz während Entwicklung vor Dauerschleife, kommt weg sobald Strahlberechnung fertig
   };
 
   switch (beamContainer.mode) {
@@ -865,7 +862,6 @@ function calculateBeam() {
   beamContainer.ey = beamContainer.y;
 
   do {
-    beamContainer.count++;
     switch (beamContainer.mode) {
       case "incX":
         console.log("calculateBeam: West-Ost");
@@ -886,22 +882,7 @@ function calculateBeam() {
       default:
         console.log("Unbekannter investigationMode " + investigationMode);
     }
-
-    console.log(
-      "x: " +
-        beamContainer.x +
-        " y: " +
-        beamContainer.y +
-        " Modus: " +
-        beamContainer.mode +
-        " Count: " +
-        beamContainer.count +
-        " beamEnd: " +
-        beamContainer.beamEnd +
-        " Result: " +
-        beamContainer.resultText
-    );
-  } while (beamContainer.beamEnd == false && beamContainer.count < 30);
+  } while (beamContainer.beamEnd == false);
 
   ++trials;
   points = beamContainer.points;
@@ -1000,7 +981,7 @@ function moveBeam(beamContainer) {
         fieldRB.y = beamContainer.y - 1;
         fieldRB.valid = true;
       }
-      if (beamContainer.x < 7) {
+      if (beamContainer.y < 7) {
         fieldLB.x = beamContainer.x;
         fieldLB.y = beamContainer.y + 1;
         fieldLB.valid = true;
@@ -1047,7 +1028,7 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
       atomArray[fieldLB.x][fieldLB.y] == 1 &&
       atomArray[fieldRB.x][fieldRB.y] == 1
     ) {
-      beamContainer.resultText = "R";
+      console.log("Reflektion LB + RB!");
       beamContainer.beamEnd = true;
       beamContainer.points = 1;
       erg[beamContainer.beamEntry] = true;
@@ -1092,8 +1073,7 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
         beamContainer.x == beamContainer.ex &&
         beamContainer.y == beamContainer.ey
       ) {
-        console.log("Reflektion!");
-        beamContainer.resultText = "R";
+        console.log("Reflektion LB!");
         beamContainer.beamEnd = true;
         beamContainer.points = 1;
         erg[beamContainer.beamEntry] = true;
@@ -1139,13 +1119,12 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
         beamContainer.x == beamContainer.ex &&
         beamContainer.y == beamContainer.ey
       ) {
-        beamContainer.resultText = "R";
         beamContainer.beamEnd = true;
         beamContainer.points = 1;
         erg[beamContainer.beamEntry] = true;
         setCursorAfterBeam(beamContainer.points);
         document.getElementById(beamContainer.beamEntry).innerHTML = orbR;
-        console.log("Reflektion!");
+        console.log("Reflektion RB!");
       }
       return beamContainer;
     }
@@ -1153,7 +1132,7 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
 
   // Überprüfen auf Treffer / Absorbtion
   if (atomArray[fieldMB.x][fieldMB.y] == 1) {
-    beamContainer.resultText = "A";
+    console.log("Absorbtion!");
     beamContainer.beamEnd = true;
     beamContainer.points = 1;
     erg[beamContainer.beamEntry] = true;
@@ -1172,7 +1151,6 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
 /* gleichfarbigen Kugeln markiert        */
 /*****************************************/
 function setBeamEnd(beamContainer) {
-  beamContainer.resultText = "*";
   beamContainer.beamEnd = true;
   beamContainer.points = 2;
   let beamEntry = beamContainer.beamEntry;
