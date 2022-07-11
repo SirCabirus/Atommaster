@@ -4,7 +4,7 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 1.2                            */
+/* Version 1.3                            */
 /* 11.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
@@ -503,7 +503,7 @@ function switchMode() {
     case mode.Beam:
       currentMode = mode.Set;
       setCursorBlocked = true;
-      document.getElementById(getSetID()).innerHTML = setAtomMark;
+      document.getElementById(getSetID()).innerHTML = atomQuestionMark;
       if (!hold) {
         questionMark = questionMarks[1];
         document.getElementById(beamCursor).innerHTML = questionMark;
@@ -675,12 +675,14 @@ function moveSetCursorRight() {
   let fid;
   if (setCursorX < 7) {
     setCursorX++;
+    fid = getLastSetID();
     if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
-      fid = getLastSetID();
       document.getElementById(fid).innerHTML = "";
+    } else {
+      document.getElementById(fid).innerHTML = setAtomMark;   
     }
     fid = getSetID();
-    document.getElementById(fid).innerHTML = setAtomMark;
+    document.getElementById(fid).innerHTML = atomQuestionMark;
   }
 }
 
@@ -694,12 +696,14 @@ function moveSetCursorLeft() {
   let fid;
   if (setCursorX > 0) {
     setCursorX--;
+    fid = getLastSetID();
     if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
-      fid = getLastSetID();
       document.getElementById(fid).innerHTML = "";
+    } else {
+      document.getElementById(fid).innerHTML = setAtomMark;   
     }
     fid = getSetID();
-    document.getElementById(fid).innerHTML = setAtomMark;
+    document.getElementById(fid).innerHTML = atomQuestionMark;
   }
 }
 
@@ -713,12 +717,14 @@ function moveSetCursorUp() {
   let fid;
   if (setCursorY > 0) {
     setCursorY--;
+    fid = getLastSetID();
     if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
-      fid = getLastSetID();
       document.getElementById(fid).innerHTML = "";
+    } else {
+      document.getElementById(fid).innerHTML = setAtomMark;   
     }
     fid = getSetID();
-    document.getElementById(fid).innerHTML = setAtomMark;
+    document.getElementById(fid).innerHTML = atomQuestionMark;
   }
 }
 
@@ -732,12 +738,14 @@ function moveSetCursorDown() {
   let fid;
   if (setCursorY < 7) {
     setCursorY++;
+    fid = getLastSetID();
     if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
-      fid = getLastSetID();
       document.getElementById(fid).innerHTML = "";
+    } else {
+      document.getElementById(fid).innerHTML = setAtomMark;   
     }
     fid = getSetID();
-    document.getElementById(fid).innerHTML = setAtomMark;
+    document.getElementById(fid).innerHTML = atomQuestionMark;
   }
 }
 
