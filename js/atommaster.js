@@ -41,7 +41,7 @@ let atomSetArray = [
 
 // Array mit der Zuordnung der Position des Abfrage-Cursors (Rim-ID) zu den Feldkoordinaten und der Strahlrichtung
 // beam2Coordinates[0] ist null, damit die Rim-ID direkt als Index für das Array verwendet werden kann
-  const beam2Coordinates = [
+const beam2Coordinates = [
   null,
   "0.0.incX",
   "0.1.incX",
@@ -150,7 +150,17 @@ let setCursorLastX = 0;
 let setCursorLastY = 0;
 
 // Anzahl der zu ermittelnden Atome
-let atomsCnt = 4; // TODO
+let atomsCnt = 4; // Default
+
+// Mindestanzahl zu ermittelnder Atome
+let atomsMinCnt = 3;
+
+// Maximal zu ermittelnde Atome
+let atomsMaxCnt = 6;
+
+// Flag ob Veränderung der Anzahl der zu ermittelnden Atome erlaubt ist
+// wird auf false gesetzt, sobald Abfrage-Cursor bewegt oder Strahl abgeschossen wurde
+let atomsCntChangeAllowed = true;
 
 // Anzahl der gesetzten Atome
 let setAtomsCnt = 0;
@@ -241,8 +251,7 @@ let orbs = [
   '<img src="img/orb16.png">',
 ];
 
-// fünf Leerzeichen zur Trennung der Ausgabeinformationen in der Statuszeile
-// const space = "\xa0\xa0\xa0\xa0\xa0"; TODO
+// vier Leerzeichen zur Trennung der Ausgabeinformationen in der Statuszeile
 const space = "\xa0\xa0\xa0\xa0";
 
 // Variablen für die Tastatureingaben
@@ -253,7 +262,7 @@ let KEY_DOWN = false; // die 'Pfeil nach unten' Cursor-Taste
 let KEY_ENTER = false; // die Eingabe-Taste
 let KEY_CONTROL = false; // die STRG-Taste
 let KEY_E = false; // die E-Taste
-let KEY_ALT = false; // die ALT-Taste
+let KEY_SHIFT = false; // die Shift-Taste
 
 /**********************************/
 /*      Tastatur abfragen         */
@@ -262,7 +271,7 @@ let KEY_ALT = false; // die ALT-Taste
 /* wenn Taste gedrückt wurde      */
 /**********************************/
 document.onkeydown = function (e) {
-// console.log(">" + e.key + "<");
+  // console.log(">" + e.key + "<");
 
   // Cursor nach rechts gedrückt
   if (e.key == "ArrowRight") {
@@ -294,9 +303,9 @@ document.onkeydown = function (e) {
     KEY_CONTROL = true;
   }
 
-  // ALT wurde gedrückt
-  if (e.key == "Alt") {
-    KEY_ALT = true;
+  // SHIFT wurde gedrückt
+  if (e.key == "Shift") {
+    KEY_SHIFT = true;
   }
 
   // E wurde gedrückt
@@ -341,9 +350,9 @@ document.onkeyup = function (e) {
     KEY_CONTROL = false;
   }
 
-  // ALT wurde losgelassen
-  if (e.key == "Alt") {
-    KEY_ALT = false;
+  // Shift wurde losgelassen
+  if (e.key == "Shift") {
+    KEY_SHIFT = false;
   }
 
   // E wurde losgelassen
@@ -389,10 +398,27 @@ function gameLoop() {
     return;
   }
 
+  // Anzahl Atome verändern
+  if (KEY_SHIFT && KEY_UP && atomsCntChangeAllowed && atomsCnt < atomsMaxCnt) {
+    ++atomsCnt;
+    setAtoms();
+  }
+
+  if (
+    KEY_SHIFT &&
+    KEY_DOWN &&
+    atomsCntChangeAllowed &&
+    atomsCnt > atomsMinCnt
+  ) {
+    --atomsCnt;
+    setAtoms();
+  }
+
   // Cursor nach rechts bewegen
   if (KEY_RIGHT) {
     switch (currentMode) {
       case mode.Beam:
+        atomsCntChangeAllowed = false;
         moveBeamCursorRight();
         break;
       case mode.Set:
@@ -407,6 +433,7 @@ function gameLoop() {
   if (KEY_LEFT) {
     switch (currentMode) {
       case mode.Beam:
+        atomsCntChangeAllowed = false;
         moveBeamCursorLeft();
         break;
       case mode.Set:
@@ -449,6 +476,7 @@ function gameLoop() {
   if (KEY_ENTER) {
     switch (currentMode) {
       case mode.Beam:
+        atomsCntChangeAllowed = false;
         calculateBeam();
         break;
       case mode.Set:
@@ -522,9 +550,11 @@ function switchMode() {
       currentMode = mode.Set;
       setCursorBlocked = true;
       document.getElementById(getSetID()).innerHTML = atomQuestionMark;
+      questionMark = questionMarks[1];
       if (!hold) {
-        questionMark = questionMarks[1];
         document.getElementById(beamCursor).innerHTML = questionMark;
+      } else {
+        document.getElementById("hold").innerHTML = questionMark;
       }
       break;
     case mode.Set:
@@ -534,7 +564,11 @@ function switchMode() {
         document.getElementById(getSetID()).innerHTML = "";
       }
       questionMark = questionMarks[0];
-      document.getElementById(beamCursor).innerHTML = questionMark;
+      if (!hold) {
+        document.getElementById(beamCursor).innerHTML = questionMark;
+      } else {
+        document.getElementById("hold").innerHTML = questionMark;
+      }
       break;
     default:
       console.log("switchMode(): currentMode nicht definiert.");
@@ -697,7 +731,7 @@ function moveSetCursorRight() {
     if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
       document.getElementById(fid).innerHTML = "";
     } else {
-      document.getElementById(fid).innerHTML = setAtomMark;   
+      document.getElementById(fid).innerHTML = setAtomMark;
     }
     fid = getSetID();
     document.getElementById(fid).innerHTML = atomQuestionMark;
@@ -718,7 +752,7 @@ function moveSetCursorLeft() {
     if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
       document.getElementById(fid).innerHTML = "";
     } else {
-      document.getElementById(fid).innerHTML = setAtomMark;   
+      document.getElementById(fid).innerHTML = setAtomMark;
     }
     fid = getSetID();
     document.getElementById(fid).innerHTML = atomQuestionMark;
@@ -739,7 +773,7 @@ function moveSetCursorUp() {
     if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
       document.getElementById(fid).innerHTML = "";
     } else {
-      document.getElementById(fid).innerHTML = setAtomMark;   
+      document.getElementById(fid).innerHTML = setAtomMark;
     }
     fid = getSetID();
     document.getElementById(fid).innerHTML = atomQuestionMark;
@@ -760,7 +794,7 @@ function moveSetCursorDown() {
     if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
       document.getElementById(fid).innerHTML = "";
     } else {
-      document.getElementById(fid).innerHTML = setAtomMark;   
+      document.getElementById(fid).innerHTML = setAtomMark;
     }
     fid = getSetID();
     document.getElementById(fid).innerHTML = atomQuestionMark;
@@ -814,6 +848,13 @@ function deleteAtomProbeField() {
 /* Positionen                       */
 /************************************/
 function setAtoms() {
+  for (let x = 0; x <= 7; x++) {
+    for (let y = 0; y <= 7; y++) {
+      atomArray[x][y] = 0;
+      document.getElementById("f" + x + y).innerHTML = "";
+    }
+  }
+
   for (let i = 1; i <= atomsCnt; i++) {
     let sucess = false;
     do {
@@ -825,6 +866,7 @@ function setAtoms() {
       }
     } while (sucess == false);
   }
+  // showAtoms();
 }
 
 /*******************************/
