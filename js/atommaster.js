@@ -4,7 +4,7 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 1.4                            */
+/* Version 1.5                            */
 /* 13.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
@@ -251,8 +251,8 @@ let orbs = [
   '<img src="img/orb16.png">',
 ];
 
-// vier Leerzeichen zur Trennung der Ausgabeinformationen in der Statuszeile
-const space = "\xa0\xa0\xa0\xa0";
+// drei Leerzeichen zur Trennung der Ausgabeinformationen in der Statuszeile
+const space = "\xa0\xa0\xa0";
 
 // Variablen für die Tastatureingaben
 let KEY_RIGHT = false; // die 'Pfeil nach rechts' Cursor-Taste
