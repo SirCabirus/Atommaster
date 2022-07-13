@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 1.3                            */
-/* 11.06.2022                             */
+/* Version 1.4                            */
+/* 13.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -39,8 +39,9 @@ let atomSetArray = [
   [0, 0, 0, 0, 0, 0, 0, 0],
 ];
 
-// Array mit der Zuordnung der Position des Abfrage-Cursors (Rim-ID) zu den Feldkoordinaten und der Feldrichtung
-const beam2Coordinates = [
+// Array mit der Zuordnung der Position des Abfrage-Cursors (Rim-ID) zu den Feldkoordinaten und der Strahlrichtung
+// beam2Coordinates[0] ist null, damit die Rim-ID direkt als Index für das Array verwendet werden kann
+  const beam2Coordinates = [
   null,
   "0.0.incX",
   "0.1.incX",
@@ -149,7 +150,7 @@ let setCursorLastX = 0;
 let setCursorLastY = 0;
 
 // Anzahl der zu ermittelnden Atome
-let atomsCnt = 4;
+let atomsCnt = 4; // TODO
 
 // Anzahl der gesetzten Atome
 let setAtomsCnt = 0;
@@ -212,6 +213,8 @@ let placedAtoms = [
   '<img src="img/atomSetCount2.png">',
   '<img src="img/atomSetCount3.png">',
   '<img src="img/atomSetCount4.png">',
+  '<img src="img/atomSetCount5.png">',
+  '<img src="img/atomSetCount6.png">',
 ];
 
 let atomImage = '<img src="img/atom.png">'; // Grafik zur Anzeige von Atomen af dem Experimentierfeld
@@ -239,7 +242,8 @@ let orbs = [
 ];
 
 // fünf Leerzeichen zur Trennung der Ausgabeinformationen in der Statuszeile
-const space = "\xa0\xa0\xa0\xa0\xa0";
+// const space = "\xa0\xa0\xa0\xa0\xa0"; TODO
+const space = "\xa0\xa0\xa0\xa0";
 
 // Variablen für die Tastatureingaben
 let KEY_RIGHT = false; // die 'Pfeil nach rechts' Cursor-Taste
@@ -249,6 +253,7 @@ let KEY_DOWN = false; // die 'Pfeil nach unten' Cursor-Taste
 let KEY_ENTER = false; // die Eingabe-Taste
 let KEY_CONTROL = false; // die STRG-Taste
 let KEY_E = false; // die E-Taste
+let KEY_ALT = false; // die ALT-Taste
 
 /**********************************/
 /*      Tastatur abfragen         */
@@ -257,7 +262,7 @@ let KEY_E = false; // die E-Taste
 /* wenn Taste gedrückt wurde      */
 /**********************************/
 document.onkeydown = function (e) {
-  // console.log(">" + e.key + "<");
+// console.log(">" + e.key + "<");
 
   // Cursor nach rechts gedrückt
   if (e.key == "ArrowRight") {
@@ -287,6 +292,11 @@ document.onkeydown = function (e) {
   // STRG wurde gedrückt
   if (e.key == "Control") {
     KEY_CONTROL = true;
+  }
+
+  // ALT wurde gedrückt
+  if (e.key == "Alt") {
+    KEY_ALT = true;
   }
 
   // E wurde gedrückt
@@ -329,6 +339,11 @@ document.onkeyup = function (e) {
   // STRG wurde losgelassen
   if (e.key == "Control") {
     KEY_CONTROL = false;
+  }
+
+  // ALT wurde losgelassen
+  if (e.key == "Alt") {
+    KEY_ALT = false;
   }
 
   // E wurde losgelassen
@@ -477,6 +492,9 @@ function gameLoop() {
 
   // gamestatus = "Versuche: " + trials + space + "Punkte: " + score;
   gamestatus =
+    "Atome: " +
+    atomsCnt +
+    space +
     "Versuche: " +
     trials +
     space +
@@ -835,6 +853,9 @@ function calculateBeam() {
   let points;
 
   // beam2Coordinates
+  // Array mit der Zuordnung der Position des Abfrage-Cursors (Rim-ID) zu den Feldkoordinaten und der Strahlrichtung
+  // [0] = X-Koordinate, [1] = Y-Koordinate, [2] = Strahlrichtung (West-Ost: incX, Süd-Nord: decY, Ost-West: decX, Nord-Süd: incY)
+  // beam2Coordinates[0] ist null, damit die Rim-ID direkt als Index für das Array verwendet werden kann
   let beam = beam2Coordinates[beamCursor].split(".");
 
   let beamContainer = {
@@ -849,6 +870,8 @@ function calculateBeam() {
     beamEnd: false,
   };
 
+  // in Abhängigkeit der Strahlrichtung wird die Anfangskoordinate angepasst, weil als erstes der Strahl in der angegebenen
+  // Richtung verschoben und dann die Auswirkung betrachtet wird
   switch (beamContainer.mode) {
     case "incX":
       beamContainer.x--;
@@ -873,23 +896,20 @@ function calculateBeam() {
     switch (beamContainer.mode) {
       case "incX":
         console.log("calculateBeam: West-Ost");
-        moveBeam(beamContainer);
         break;
       case "decY":
         console.log("calculateBeam: Süd-Nord");
-        moveBeam(beamContainer);
         break;
       case "decX":
         console.log("calculateBeam: Ost-West");
-        moveBeam(beamContainer);
         break;
       case "incY":
         console.log("calculateBeam: Nord-Süd");
-        moveBeam(beamContainer);
         break;
       default:
         console.log("Unbekannter investigationMode " + investigationMode);
     }
+    moveBeam(beamContainer);
   } while (beamContainer.beamEnd == false);
 
   ++trials;
@@ -1025,7 +1045,7 @@ function moveBeam(beamContainer) {
 
 /*************************************/
 /* Überprüft den Untersuchungsstrahl */
-/* auf Richtungsänderung, Absorbtion */
+/* auf Richtungsänderung, Absorption */
 /* und Reflektion                    */
 /*************************************/
 function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
@@ -1138,9 +1158,9 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
     }
   }
 
-  // Überprüfen auf Treffer / Absorbtion
+  // Überprüfen auf Treffer / Absorption
   if (atomArray[fieldMB.x][fieldMB.y] == 1) {
-    console.log("Absorbtion!");
+    console.log("Absorption!");
     beamContainer.beamEnd = true;
     beamContainer.points = 1;
     erg[beamContainer.beamEntry] = true;
