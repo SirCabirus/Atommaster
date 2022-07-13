@@ -562,6 +562,8 @@ function switchMode() {
       setCursorBlocked = true;
       if (atomSetArray[setCursorX][setCursorY] == 0) {
         document.getElementById(getSetID()).innerHTML = "";
+      } else {
+        document.getElementById(getSetID()).innerHTML = atomImage;
       }
       questionMark = questionMarks[0];
       if (!hold) {
