@@ -1,7 +1,7 @@
 # Atommaster aka Black Box
 A javaScript implementation of the Black Box (ORDO) Game.
 
-Rules: https://en.wikipedia.org/wiki/Black_Box_(game)
+A manual is available in the doc folder in english and german language.
 
 - A hit is marked with A
 - A reflection is marked with R
@@ -12,6 +12,12 @@ cursor keys left and right on the query fields to move around
 the game field.  
 
 The Enter key is used to fire an investigation beam.
+
+The number of hidden atoms can be gradually increased by the player 
+up to six atoms or decreased down to three atoms. This is only possible 
+until the query cursor is moved for the first time or a beam is fired. 
+Pressing [SHIFT] + [Cursor up] increases the number of atoms, 
+pressing [SHIFT] + [Cursor down] decreases it.
 
 The CTRL key is used to switch between the input beam on the query fields 
 and the setting of the presumably discovered atoms in the game field.
@@ -32,7 +38,7 @@ Press F5 to restart the game.
 
 Eine JavaScript Implementierung des Black Box (ORDO) Spiels.
 
-https://en.wikipedia.org/wiki/Black_Box_(game)
+Eine Anleitung steht im doc-Ordner in englischer und deutscher Sprache zur Verfügung.
 
 - Ein Treffer wird mit A markiert
 - Eine Reflexion wird mit R markiert
@@ -41,7 +47,13 @@ https://en.wikipedia.org/wiki/Black_Box_(game)
 Der Cursor (das blaue Fragezeichen) wird mit den Cursor-Tasten links 
 und rechts auf den Abfragefeldern um das Spielfeld bewegt.
 
-Über die Eingabe-Taste wird ein Untersuchungsstrahl abgefeuert. 
+Über die Eingabe-Taste wird ein Untersuchungsstrahl abgefeuert.
+
+Die Anzahl der versteckten Atome kann vom Spieler schrittweise bis 
+auf sechs Atome erhöht oder bis auf drei Atome erniedrigt werden. Dies ist nur 
+solange möglich, bis der Abfrage-Cursor das erste Mal bewegt oder ein Strahl 
+abgefeuert wurde. Durch Betätigen der [SHIFT] + [Cursor hoch] wird die Anzahl 
+der Atome erhöht, durch [SHIFT] + [Cursor runter] erniedrigt.
 
 Mit der STRG-Taste wird zwischen dem Eingabestrahl auf den Abfragefeldern 
 und dem Setzen der vermutlich entdeckten Atome im Spielefeld hin und hergeschaltet.
