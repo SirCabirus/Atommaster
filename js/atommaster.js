@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 1.5                            */
-/* 13.06.2022                             */
+/* Version 1.6                            */
+/* 14.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -196,6 +196,39 @@ let gameEnd = false;
 // Statuszeile
 let gamestatus;
 
+// Ausgabetexte
+let textAlert1;
+let textAlert2;
+let textAtoms;
+let textTrials;
+let textPoints;
+let textHits;
+let textMissed;
+let textScore;
+
+// wenn die eingestellte Browser-Sprache nicht Deutsch ist, wird alles auf Englisch angezeigt
+if (navigator.language.indexOf("de") > -1) {
+  // deutscher Text
+  textAlert1 = deAlert1;
+  textAlert2 = deAlert2;
+  textAtoms = deAtoms;
+  textTrials = deTrials;
+  textPoints = dePoints;
+  textHits = deHits;
+  textMissed = deMissed;
+  textScore = deScore;
+} else {
+  // englischer Text
+  textAlert1 = engAlert1;
+  textAlert2 = engAlert2;
+  textAtoms = engAtoms;
+  textTrials = engTrials;
+  textPoints = engPoints;
+  textHits = engHits;
+  textMissed = engMissed;
+  textScore = engScore;
+}
+
 // Parameter für im Intervall aufgerufene Funktionen
 let gameLoopHandle;
 let gameLoopIntervall = 100;
@@ -379,9 +412,6 @@ function startGame() {
   // Atome zufällig auf dem Experementierfeld verteilen
   setAtoms();
 
-  // Atome anzeigen
-  // showAtoms();
-
   // Aufruf von Funktionen, die im zeitlichen Intervall immer wieder aufgerufen werden
   gameLoopHandle = setInterval(gameLoop, gameLoopIntervall);
 }
@@ -518,25 +548,44 @@ function gameLoop() {
     calculateResult();
   }
 
-  // gamestatus = "Versuche: " + trials + space + "Punkte: " + score;
+  // Statuszeile anzeigen
+  if (gameEndShow == false) {
   gamestatus =
-    "Atome: " +
+    textAtoms +
     atomsCnt +
     space +
-    "Versuche: " +
+    textTrials +
     trials +
     space +
-    "Punkte: " +
-    score +
-    space +
-    "Treffer: " +
+    textHits +
     hits +
     space +
-    "Falsch: " +
-    wrong;
+    textMissed +
+    wrong +
+    space +
+    textPoints +
+    score;
+  } else {
+    gamestatus =
+    textAtoms +
+    atomsCnt +
+    space +
+    textTrials +
+    trials +
+    space +
+    textHits +
+    hits +
+    space +
+    textMissed +
+    wrong +
+    space +
+    textScore +
+    score;
+    gameEnd = true;
+  }
   document.getElementById("status").innerHTML = gamestatus;
 
-  if (gameEndShow) gameEnd = true;
+  // if (gameEndShow) gameEnd = true;
 }
 
 /**********************************/
@@ -1247,7 +1296,8 @@ function setBeamEnd(beamContainer) {
 function calculateResult() {
   // Spieler informieren, dass vor der Auswertung erst alle Atome gesetzt sein müssen
   if (setAtomsCnt < atomsCnt) {
-    window.alert("Es sind noch keine " + atomsCnt + " Atome gesetzt!");
+    window.alert(
+      textAlert1 + atomsCnt + textAlert2);
     KEY_E = false;
     return;
   }
