@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 1.6                            */
-/* 14.06.2022                             */
+/* Version 1.61                           */
+/* 17.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -199,6 +199,8 @@ let gamestatus;
 // Ausgabetexte
 let textAlert1;
 let textAlert2;
+let textAlert3;
+let textAlert4;
 let textAtoms;
 let textTrials;
 let textPoints;
@@ -211,6 +213,8 @@ if (navigator.language.indexOf("de") > -1) {
   // deutscher Text
   textAlert1 = deAlert1;
   textAlert2 = deAlert2;
+  textAlert3 = deAlert3;
+  textAlert4 = deAlert4;
   textAtoms = deAtoms;
   textTrials = deTrials;
   textPoints = dePoints;
@@ -221,6 +225,8 @@ if (navigator.language.indexOf("de") > -1) {
   // englischer Text
   textAlert1 = engAlert1;
   textAlert2 = engAlert2;
+  textAlert3 = engAlert3;
+  textAlert4 = engAlert4;
   textAtoms = engAtoms;
   textTrials = engTrials;
   textPoints = engPoints;
@@ -243,8 +249,8 @@ let questionMark = questionMarks[0];
 let questionMarkCurrent = 0;
 
 // Grafiken für das Experimentierfeld im Set-Modus
-let setAtomMark = '<img src="img/atom.png">'; // Cursor-Grafik im Set-Modus
-let atomQuestionMark = '<img src="img/atomQuestionMark.png">'; // TODO wird zur Zeit nicht verwendet
+let setAtomMark = '<img src="img/atom.png">'; // gesetztes Atom
+let atomQuestionMark = '<img src="img/atomQuestionMark.png">'; // Cursor im Set-Modus
 let atomRight = '<img src="img/atomRight.png">'; // richtig ermitteltes Atom
 let atomWrong = '<img src="img/atomWrong.png">'; // falsch ermitteltes Atom
 let atomMissed = '<img src="img/atom.png">'; // nicht ermittelte Atom
@@ -584,8 +590,6 @@ function gameLoop() {
     gameEnd = true;
   }
   document.getElementById("status").innerHTML = gamestatus;
-
-  // if (gameEndShow) gameEnd = true;
 }
 
 /**********************************/
@@ -715,6 +719,19 @@ function moveBeamCursorLeft() {
 /* wird die Funktion sofort    */
 /* verlassen                   */
 /*******************************/
+
+/******************************
+ * Bewegt den Abfrage-Cursor   
+ * auf das nächste freie Feld  
+ * nach rechts.                
+ * Falls kein Feld frei ist  
+ * wird die Funktion sofort    
+ * verlassen                   
+ * 
+ * @param {number} count die
+ *     Anzahl der benötigten
+ *     Rim-Felder.
+ ******************************/
 function setCursorAfterBeam(count) {
   if (count == 2 && rimUsed == 30) return;
   if (count == 1 && rimUsed == 31) return;
@@ -880,6 +897,8 @@ function setAtomProbeField() {
     atomSetArray[setCursorX][setCursorY] = 1;
     ++setAtomsCnt;
     document.getElementById("setcnt").innerHTML = placedAtoms[setAtomsCnt];
+  } else {
+    window.alert(textAlert3 + atomsCnt + textAlert4);
   }
 }
 
