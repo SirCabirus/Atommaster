@@ -4,7 +4,7 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 1.61                           */
+/* Version 1.62                           */
 /* 17.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
@@ -201,6 +201,7 @@ let textAlert1;
 let textAlert2;
 let textAlert3;
 let textAlert4;
+let textAlert5;
 let textAtoms;
 let textTrials;
 let textPoints;
@@ -215,6 +216,7 @@ if (navigator.language.indexOf("de") > -1) {
   textAlert2 = deAlert2;
   textAlert3 = deAlert3;
   textAlert4 = deAlert4;
+  textAlert5 = deAlert5;
   textAtoms = deAtoms;
   textTrials = deTrials;
   textPoints = dePoints;
@@ -227,6 +229,7 @@ if (navigator.language.indexOf("de") > -1) {
   textAlert2 = engAlert2;
   textAlert3 = engAlert3;
   textAlert4 = engAlert4;
+  textAlert5 = engAlert5;
   textAtoms = engAtoms;
   textTrials = engTrials;
   textPoints = engPoints;
@@ -434,20 +437,31 @@ function gameLoop() {
     return;
   }
 
-  // Anzahl Atome verändern
-  if (KEY_SHIFT && KEY_UP && atomsCntChangeAllowed && atomsCnt < atomsMaxCnt) {
-    ++atomsCnt;
-    setAtoms();
+  /** Anzahl Atome verändern **/  
+  // Anzahl Atome erhöhen  
+  if (KEY_SHIFT && KEY_UP) {
+    if (atomsCntChangeAllowed) {
+      if (atomsCnt < atomsMaxCnt) {
+        ++atomsCnt;
+        setAtoms();    
+      }
+    } else {
+      window.alert(textAlert5);
+      KEY_SHIFT = false;
+    }
   }
 
-  if (
-    KEY_SHIFT &&
-    KEY_DOWN &&
-    atomsCntChangeAllowed &&
-    atomsCnt > atomsMinCnt
-  ) {
-    --atomsCnt;
-    setAtoms();
+  // Anzahl Atome erhöhen  
+  if (KEY_SHIFT && KEY_DOWN) {
+    if (atomsCntChangeAllowed) {
+      if (atomsCnt > atomsMinCnt) {
+        --atomsCnt;
+        setAtoms();    
+      }
+    } else {
+      window.alert(textAlert5);
+      KEY_SHIFT = false;
+    }
   }
 
   // Cursor nach rechts bewegen
