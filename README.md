@@ -2,7 +2,7 @@
 
 ![Atommaster Title](/img/AtommasterTitle.jpg)
 
-A javaScript implementation of the Black Box (ORDO) Game.
+## A javaScript implementation of the Black Box (ORDO) Game by Parker.
 
 A manual is available in the [doc](/doc) folder in [english](doc/AtommasterENG.pdf) and [german](doc/AtommasterDEU.pdf) language.
 
@@ -40,7 +40,7 @@ The E key is used to evaluate the game. The game field shows
 
 Press F5 to restart the game.
 
-Eine JavaScript Implementierung des Black Box (ORDO) Spiels.
+## Eine JavaScript Implementierung des Black Box (ORDO) Spiels von Parker.
 
 Eine Anleitung steht im [doc](/doc)-Ordner in [englischer](doc/AtommasterENG.pdf) und [deutscher](doc/AtommasterDEU.pdf) Sprache zur Verfügung.
 
