@@ -4,7 +4,7 @@
 
 ## A JavaScript implementation of the Black Box (ORDO) Game by Parker.
 
-A manual is available in the [doc](/doc) folder in [english](doc/AtommasterENG.pdf) and [german](doc/AtommasterDEU.pdf) language.
+A detailed manual is available in the [doc](/doc) folder in [english](doc/AtommasterENG.pdf) and [german](doc/AtommasterDEU.pdf) language.
 
 ## Quick guide
 - A hit is marked with A
@@ -42,7 +42,7 @@ Press F5 to restart the game.
 
 ## Eine JavaScript Implementierung des Black Box (ORDO) Spiels von Parker.
 
-Eine Anleitung steht im [doc](/doc)-Ordner in [englischer](doc/AtommasterENG.pdf) und [deutscher](doc/AtommasterDEU.pdf) Sprache zur Verfügung.
+Eine ausführliche Anleitung steht im [doc](/doc)-Ordner in [englischer](doc/AtommasterENG.pdf) und [deutscher](doc/AtommasterDEU.pdf) Sprache zur Verfügung.
 
 ## Kurzanleitung
 - Ein Treffer wird mit A markiert
