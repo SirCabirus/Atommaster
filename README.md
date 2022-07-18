@@ -1,8 +1,12 @@
 # Atommaster aka Black Box
+
+![Atommaster Title](/img/AtommasterTitle.jpg)
+
 A javaScript implementation of the Black Box (ORDO) Game.
 
-A manual is available in the doc folder in english and german language.
+A manual is available in the [doc](/doc) folder in [english](doc/AtommasterENG.pdf) and [german](doc/AtommasterDEU.pdf) language.
 
+## Quick guide
 - A hit is marked with A
 - A reflection is marked with R
 - The entrance and exit of a beam is marked with two marbles of the same color.
@@ -38,8 +42,9 @@ Press F5 to restart the game.
 
 Eine JavaScript Implementierung des Black Box (ORDO) Spiels.
 
-Eine Anleitung steht im doc-Ordner in englischer und deutscher Sprache zur Verfügung.
+Eine Anleitung steht im [doc](/doc)-Ordner in [englischer](doc/AtommasterENG.pdf) und [deutscher](doc/AtommasterDEU.pdf) Sprache zur Verfügung.
 
+## Kurzanleitung
 - Ein Treffer wird mit A markiert
 - Eine Reflexion wird mit R markiert
 - Ein- und Ausgang eines Strahls wird mit zwei gleichfarbigen Murmeln markiert.
