@@ -40,6 +40,8 @@ The E key is used to evaluate the game. The game field shows
 
 Press F5 to restart the game.
 
+Atommaster can be played via [this link](https://sircabirus.github.io/Atommaster/).
+
 ## Eine JavaScript Implementierung des Black Box (ORDO) Spiels von Parker.
 
 Eine ausführliche Anleitung steht im [doc](/doc)-Ordner in [englischer](doc/AtommasterENG.pdf) und [deutscher](doc/AtommasterDEU.pdf) Sprache zur Verfügung.
@@ -76,3 +78,5 @@ und nochmals die Eingabe-Taste betätigt.
 - welche Atome nicht endeckt wurden
 
 Über F5 wird das Spiel neu gestartet.
+
+Atommaster kann über [diesen Link](https://sircabirus.github.io/Atommaster/) gespielt werden.
