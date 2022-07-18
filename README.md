@@ -2,7 +2,7 @@
 
 ![Atommaster Title](/img/AtommasterTitle.jpg)
 
-## A javaScript implementation of the Black Box (ORDO) Game by Parker.
+## A JavaScript implementation of the Black Box (ORDO) Game by Parker.
 
 A manual is available in the [doc](/doc) folder in [english](doc/AtommasterENG.pdf) and [german](doc/AtommasterDEU.pdf) language.
 
