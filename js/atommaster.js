@@ -5,7 +5,7 @@
 /* welches auch als Black Box bekannt ist */
 /*                                        */
 /* Version 1.62                           */
-/* 17.06.2022                             */
+/* 18.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -437,30 +437,30 @@ function gameLoop() {
     return;
   }
 
-  /** Anzahl Atome verändern **/  
-  // Anzahl Atome erhöhen  
+  /** Anzahl Atome verändern **/
+  // Anzahl Atome erhöhen
   if (KEY_SHIFT && KEY_UP) {
     if (atomsCntChangeAllowed) {
       if (atomsCnt < atomsMaxCnt) {
         ++atomsCnt;
-        setAtoms();    
+        setAtoms();
       }
     } else {
       window.alert(textAlert5);
-      KEY_SHIFT = false;
+      deleteKeyboardBuffer();
     }
   }
 
-  // Anzahl Atome erhöhen  
+  // Anzahl Atome erhöhen
   if (KEY_SHIFT && KEY_DOWN) {
     if (atomsCntChangeAllowed) {
       if (atomsCnt > atomsMinCnt) {
         --atomsCnt;
-        setAtoms();    
+        setAtoms();
       }
     } else {
       window.alert(textAlert5);
-      KEY_SHIFT = false;
+      deleteKeyboardBuffer();
     }
   }
 
@@ -570,40 +570,54 @@ function gameLoop() {
 
   // Statuszeile anzeigen
   if (gameEndShow == false) {
-  gamestatus =
-    textAtoms +
-    atomsCnt +
-    space +
-    textTrials +
-    trials +
-    space +
-    textHits +
-    hits +
-    space +
-    textMissed +
-    wrong +
-    space +
-    textPoints +
-    score;
+    gamestatus =
+      textAtoms +
+      atomsCnt +
+      space +
+      textTrials +
+      trials +
+      space +
+      textHits +
+      hits +
+      space +
+      textMissed +
+      wrong +
+      space +
+      textPoints +
+      score;
   } else {
     gamestatus =
-    textAtoms +
-    atomsCnt +
-    space +
-    textTrials +
-    trials +
-    space +
-    textHits +
-    hits +
-    space +
-    textMissed +
-    wrong +
-    space +
-    textScore +
-    score;
+      textAtoms +
+      atomsCnt +
+      space +
+      textTrials +
+      trials +
+      space +
+      textHits +
+      hits +
+      space +
+      textMissed +
+      wrong +
+      space +
+      textScore +
+      score;
     gameEnd = true;
   }
   document.getElementById("status").innerHTML = gamestatus;
+}
+
+/*************************************/
+/* Setzt alle Tasten auf losgelassen */
+/*************************************/
+function deleteKeyboardBuffer() {
+  KEY_SHIFT = false;
+  KEY_CONTROL = false;
+  KEY_UP = false;
+  KEY_DOWN = false;
+  KEY_RIGHT = false;
+  KEY_LEFT = false;
+  KEY_ENTER = false;
+  KEY_E = false;
 }
 
 /**********************************/
@@ -735,13 +749,13 @@ function moveBeamCursorLeft() {
 /*******************************/
 
 /******************************
- * Bewegt den Abfrage-Cursor   
- * auf das nächste freie Feld  
- * nach rechts.                
- * Falls kein Feld frei ist  
- * wird die Funktion sofort    
- * verlassen                   
- * 
+ * Bewegt den Abfrage-Cursor
+ * auf das nächste freie Feld
+ * nach rechts.
+ * Falls kein Feld frei ist
+ * wird die Funktion sofort
+ * verlassen
+ *
  * @param {number} count die
  *     Anzahl der benötigten
  *     Rim-Felder.
@@ -1329,8 +1343,7 @@ function setBeamEnd(beamContainer) {
 function calculateResult() {
   // Spieler informieren, dass vor der Auswertung erst alle Atome gesetzt sein müssen
   if (setAtomsCnt < atomsCnt) {
-    window.alert(
-      textAlert1 + atomsCnt + textAlert2);
+    window.alert(textAlert1 + atomsCnt + textAlert2);
     KEY_E = false;
     return;
   }
