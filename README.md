@@ -63,8 +63,8 @@ und rechts auf den Abfragefeldern um das Spielfeld bewegt.
 Über die Eingabe-Taste wird ein Untersuchungsstrahl abgefeuert.
 
 Die Anzahl der versteckten Atome kann vom Spieler schrittweise bis 
-auf sechs Atome erhöht oder bis auf drei Atome erniedrigt werden. Dies ist nur 
-solange möglich, bis das erste Mal ein Strahl abgefeuert wurde. 
+auf sechs Atome erhöht oder bis auf drei Atome erniedrigt werden. 
+Dies ist nur bis zum ersten Abfeuern eines Strahls möglich.  
 Durch Betätigen der [SHIFT] + [Cursor hoch] wird die Anzahl 
 der Atome erhöht, durch [SHIFT] + [Cursor runter] erniedrigt.
 
