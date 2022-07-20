@@ -11,6 +11,9 @@ A detailed manual is available in the [doc](/doc) folder in [english](doc/Atomma
 - A reflection is marked with R
 - The entrance and exit of a beam is marked with two marbles of the same color.
 
+People who find it difficult to distinguish different shades of color can change the 
+display mode of the beam passes before starting the game by pressing the B key.
+
 The cursor (the blue question mark) is moved with the 
 cursor keys left and right on the query fields to move around 
 the game field.  
@@ -50,6 +53,9 @@ Eine ausführliche Anleitung steht im [doc](/doc)-Ordner in [englischer](doc/Ato
 - Ein Treffer wird mit A markiert
 - Eine Reflexion wird mit R markiert
 - Ein- und Ausgang eines Strahls wird mit zwei gleichfarbigen Murmeln markiert.
+
+Personen denen es schwerfällt unterschiedliche Farbtöne zu unterscheiden, können 
+den Anzeigemodus der Strahldurchgänge vor Spielbeginn durch Betätigen der B-Taste ändern. 
 
 Der Cursor (das blaue Fragezeichen) wird mit den Cursor-Tasten links 
 und rechts auf den Abfragefeldern um das Spielfeld bewegt.
