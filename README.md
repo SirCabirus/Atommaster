@@ -22,7 +22,7 @@ The Enter key is used to fire an investigation beam.
 
 The number of hidden atoms can be gradually increased by the player 
 up to six atoms or decreased down to three atoms. This is only possible 
-until the query cursor is moved for the first time or a beam is fired. 
+until the first time a beam is fired.  
 Pressing [SHIFT] + [Cursor up] increases the number of atoms, 
 pressing [SHIFT] + [Cursor down] decreases it.
 
@@ -64,8 +64,8 @@ und rechts auf den Abfragefeldern um das Spielfeld bewegt.
 
 Die Anzahl der versteckten Atome kann vom Spieler schrittweise bis 
 auf sechs Atome erhöht oder bis auf drei Atome erniedrigt werden. Dies ist nur 
-solange möglich, bis der Abfrage-Cursor das erste Mal bewegt oder ein Strahl 
-abgefeuert wurde. Durch Betätigen der [SHIFT] + [Cursor hoch] wird die Anzahl 
+solange möglich, bis das erste Mal ein Strahl abgefeuert wurde. 
+Durch Betätigen der [SHIFT] + [Cursor hoch] wird die Anzahl 
 der Atome erhöht, durch [SHIFT] + [Cursor runter] erniedrigt.
 
 Mit der STRG-Taste wird zwischen dem Eingabestrahl auf den Abfragefeldern 
