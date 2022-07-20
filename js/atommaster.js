@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 1.62                           */
-/* 18.06.2022                             */
+/* Version 1.7                            */
+/* 20.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -130,6 +130,9 @@ let beamCursorBlocked = false;
 let setCursorBlocked = false;
 let setAtomCursorBlocked = false;
 
+// ist der Wechsel zwischen Standard- und Billardkugel Anzeige blockiert
+let toggleOrbsBlocked = false;
+
 // Speicher der genutzten Orbs
 let orbsUsed = [];
 for (let i = 0; i < 16; i++) {
@@ -158,9 +161,9 @@ let atomsMinCnt = 3;
 // Maximal zu ermittelnde Atome
 let atomsMaxCnt = 6;
 
-// Flag ob Veränderung der Anzahl der zu ermittelnden Atome erlaubt ist
-// wird auf false gesetzt, sobald Abfrage-Cursor bewegt oder Strahl abgeschossen wurde
-let atomsCntChangeAllowed = true;
+// Flag ob das Spiel begonnen hat, 
+// wird auf false gesetzt sobald ein Strahl abgeschossen wurde
+let gameNotStarted = true;
 
 // Anzahl der gesetzten Atome
 let setAtomsCnt = 0;
@@ -202,6 +205,7 @@ let textAlert2;
 let textAlert3;
 let textAlert4;
 let textAlert5;
+let textAlert6;
 let textAtoms;
 let textTrials;
 let textPoints;
@@ -217,6 +221,7 @@ if (navigator.language.indexOf("de") > -1) {
   textAlert3 = deAlert3;
   textAlert4 = deAlert4;
   textAlert5 = deAlert5;
+  textAlert6 = deAlert6;
   textAtoms = deAtoms;
   textTrials = deTrials;
   textPoints = dePoints;
@@ -230,6 +235,7 @@ if (navigator.language.indexOf("de") > -1) {
   textAlert3 = engAlert3;
   textAlert4 = engAlert4;
   textAlert5 = engAlert5;
+  textAlert6 = engAlert6;
   textAtoms = engAtoms;
   textTrials = engTrials;
   textPoints = engPoints;
@@ -274,7 +280,7 @@ let orbA = '<img src="img/orbA.png">'; // Anzeige Absorbiert
 let orbR = '<img src="img/orbR.png">'; // Anzeige Reflektiert
 
 // Array mit den Orbs zur Anzeige von Strahleintritt und Strahlaustritt
-let orbs = [
+let orbs1 = [
   '<img src="img/orb1.png">',
   '<img src="img/orb2.png">',
   '<img src="img/orb3.png">',
@@ -293,6 +299,28 @@ let orbs = [
   '<img src="img/orb16.png">',
 ];
 
+let orbs2 = [
+  '<img src="img/orbA1.png">',
+  '<img src="img/orbA2.png">',
+  '<img src="img/orbA3.png">',
+  '<img src="img/orbA4.png">',
+  '<img src="img/orbA5.png">',
+  '<img src="img/orbA6.png">',
+  '<img src="img/orbA7.png">',
+  '<img src="img/orbA8.png">',
+  '<img src="img/orbA9.png">',
+  '<img src="img/orbA10.png">',
+  '<img src="img/orbA11.png">',
+  '<img src="img/orbA12.png">',
+  '<img src="img/orbA13.png">',
+  '<img src="img/orbA14.png">',
+  '<img src="img/orbA15.png">',
+  '<img src="img/orbA16.png">',
+];
+
+let orbs = orbs1;
+let orbsB = false;
+
 // drei Leerzeichen zur Trennung der Ausgabeinformationen in der Statuszeile
 const space = "\xa0\xa0\xa0";
 
@@ -303,6 +331,7 @@ let KEY_UP = false; // die 'Pfeil nach oben' Cursor-Taste
 let KEY_DOWN = false; // die 'Pfeil nach unten' Cursor-Taste
 let KEY_ENTER = false; // die Eingabe-Taste
 let KEY_CONTROL = false; // die STRG-Taste
+let KEY_B = false; // die B-Taste
 let KEY_E = false; // die E-Taste
 let KEY_SHIFT = false; // die Shift-Taste
 
@@ -350,6 +379,10 @@ document.onkeydown = function (e) {
     KEY_SHIFT = true;
   }
 
+  // B wurde gedrückt
+  if (e.key == "b" || e.key == "B") {
+    KEY_B = true;
+  }
   // E wurde gedrückt
   if (e.key == "e" || e.key == "E") {
     KEY_E = true;
@@ -397,6 +430,10 @@ document.onkeyup = function (e) {
     KEY_SHIFT = false;
   }
 
+  // B wurde losgelassen
+  if (e.key == "b" || e.key == "B") {
+    KEY_B = false;
+  }
   // E wurde losgelassen
   if (e.key == "e" || e.key == "E") {
     KEY_E = false;
@@ -440,35 +477,43 @@ function gameLoop() {
   /** Anzahl Atome verändern **/
   // Anzahl Atome erhöhen
   if (KEY_SHIFT && KEY_UP) {
-    if (atomsCntChangeAllowed) {
+    if (gameNotStarted) {
       if (atomsCnt < atomsMaxCnt) {
         ++atomsCnt;
         setAtoms();
       }
     } else {
       window.alert(textAlert5);
-      deleteKeyboardBuffer();
+      clearKeyboardBuffer();
     }
   }
 
   // Anzahl Atome erhöhen
   if (KEY_SHIFT && KEY_DOWN) {
-    if (atomsCntChangeAllowed) {
+    if (gameNotStarted) {
       if (atomsCnt > atomsMinCnt) {
         --atomsCnt;
         setAtoms();
       }
     } else {
       window.alert(textAlert5);
-      deleteKeyboardBuffer();
+      clearKeyboardBuffer();
     }
+  }
+
+  // Anzeige der Orbs ändern
+  if (KEY_B && !toggleOrbsBlocked) {
+    toggleOrbs();
+  }
+
+  if (!KEY_B) {
+    toggleOrbsBlocked = false;
   }
 
   // Cursor nach rechts bewegen
   if (KEY_RIGHT) {
     switch (currentMode) {
       case mode.Beam:
-        atomsCntChangeAllowed = false;
         moveBeamCursorRight();
         break;
       case mode.Set:
@@ -483,7 +528,6 @@ function gameLoop() {
   if (KEY_LEFT) {
     switch (currentMode) {
       case mode.Beam:
-        atomsCntChangeAllowed = false;
         moveBeamCursorLeft();
         break;
       case mode.Set:
@@ -526,7 +570,8 @@ function gameLoop() {
   if (KEY_ENTER) {
     switch (currentMode) {
       case mode.Beam:
-        atomsCntChangeAllowed = false;
+        gameNotStarted = false;
+        document.getElementById("orbs").innerHTML = "";
         calculateBeam();
         break;
       case mode.Set:
@@ -607,9 +652,34 @@ function gameLoop() {
 }
 
 /*************************************/
+/* Wechsel zwischen der Standard und */
+/* Billardkugel-Anzeige hin und her  */
+/*************************************/
+function toggleOrbs() {
+  if (gameNotStarted) {
+    toggleOrbsBlocked = true;
+    if (orbsB) {
+      orbs = orbs1;
+      randomOrbs = true;
+      orbsB = false;
+      document.getElementById("orbs").innerHTML = orbs1[0];
+    } else {
+      orbs = orbs2;
+      randomOrbs = false;
+      orbsB = true;
+      document.getElementById("orbs").innerHTML = orbs2[0];
+    }
+  } else {
+    window.alert(textAlert6);
+    clearKeyboardBuffer();
+  }
+}
+
+
+/*************************************/
 /* Setzt alle Tasten auf losgelassen */
 /*************************************/
-function deleteKeyboardBuffer() {
+function clearKeyboardBuffer() {
   KEY_SHIFT = false;
   KEY_CONTROL = false;
   KEY_UP = false;
@@ -617,6 +687,7 @@ function deleteKeyboardBuffer() {
   KEY_RIGHT = false;
   KEY_LEFT = false;
   KEY_ENTER = false;
+  KEY_B = false;
   KEY_E = false;
 }
 
