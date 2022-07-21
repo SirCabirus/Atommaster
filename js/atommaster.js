@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 1.7                            */
-/* 20.06.2022                             */
+/* Version 1.71                           */
+/* 21.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -122,14 +122,19 @@ const mode = {
 // aktueller Modus
 let currentMode;
 
-// sollen die Orbs in zufälliger Reihenfolge ausgegeben werden
+// Flag ob die Orbs in zufälliger Reihenfolge ausgegeben werden sollen
+// dies ist im Billardkugel Anzeigemodus nicht der Fall
 let randomOrbs = true;
 
+/** Blockade-Flags verhindern **/
+/** das mehrfache Ausführen   **/
+/** eines Tastatur-Befehls    **/
+/** bevor die jeweile Taste   **/
+/** wieder losgelassen wurde  **/
 // ist der Cursor blockiert
 let beamCursorBlocked = false;
 let setCursorBlocked = false;
 let setAtomCursorBlocked = false;
-
 // ist der Wechsel zwischen Standard- und Billardkugel Anzeige blockiert
 let toggleOrbsBlocked = false;
 
@@ -180,7 +185,7 @@ let rimUsed = 0;
 // Flag ob es noch freie Randfläche (Rim-ID) gibt
 let rimFree = true;
 
-// Flag ob Abrage-Cursor geparkt ist weil es keine freie Randfläche mehr gibt
+// Flag ob Abfrage-Cursor geparkt ist weil es keine freie Randfläche mehr gibt
 let hold = false;
 
 // Anzahl der Versuche
@@ -193,8 +198,8 @@ let missed = 0;
 let wrong = 0;
 
 // Flags ob Spiel zu Ende ist.
-let gameEndShow = false;
-let gameEnd = false;
+let gameEndShow = false; // Spielergebnis anzeigen und dann Spiel (gameLoop()) beeenden
+let gameEnd = false; // Spiel beenden - wird gesetzt nachdem Spielergebnis angezeigt wurde
 
 // Statuszeile
 let gamestatus;
@@ -244,7 +249,7 @@ if (navigator.language.indexOf("de") > -1) {
   textScore = engScore;
 }
 
-// Parameter für im Intervall aufgerufene Funktionen
+// Parameter für im Intervall aufgerufene Funktionen - in diesem Fall nur gameLoop()
 let gameLoopHandle;
 let gameLoopIntervall = 100;
 
@@ -275,11 +280,12 @@ let placedAtoms = [
   '<img src="img/atomSetCount6.png">',
 ];
 
-let atomImage = '<img src="img/atom.png">'; // Grafik zur Anzeige von Atomen af dem Experimentierfeld
+let atomImage = '<img src="img/atom.png">'; // Grafik zur Anzeige von Atomen auf dem Experimentierfeld
 let orbA = '<img src="img/orbA.png">'; // Anzeige Absorbiert
 let orbR = '<img src="img/orbR.png">'; // Anzeige Reflektiert
 
 // Array mit den Orbs zur Anzeige von Strahleintritt und Strahlaustritt
+// Standard-Modus
 let orbs1 = [
   '<img src="img/orb1.png">',
   '<img src="img/orb2.png">',
@@ -298,7 +304,7 @@ let orbs1 = [
   '<img src="img/orb15.png">',
   '<img src="img/orb16.png">',
 ];
-
+// Billardkugel-Modus
 let orbs2 = [
   '<img src="img/orbA1.png">',
   '<img src="img/orbA2.png">',
@@ -318,8 +324,8 @@ let orbs2 = [
   '<img src="img/orbA16.png">',
 ];
 
-let orbs = orbs1;
-let orbsB = false;
+let orbs = orbs1; // Default ist Standard-Modus
+let orbsB = false; // Flag ob Billard-Modus aktiv
 
 // drei Leerzeichen zur Trennung der Ausgabeinformationen in der Statuszeile
 const space = "\xa0\xa0\xa0";
@@ -455,10 +461,10 @@ function startGame() {
   // der Cursor wird durch die Funktionen moveBeamCursorRight() und moveBeamCursorLeft() versetzt
   document.getElementById(beamCursor).innerHTML = questionMark;
 
-  // Atome zufällig auf dem Experementierfeld verteilen
+  // Atome zufällig auf dem Experimentierfeld verteilen
   setAtoms();
 
-  // Aufruf von Funktionen, die im zeitlichen Intervall immer wieder aufgerufen werden
+  // Aufruf von Funktionen, die im zeitlichen Intervall immer wieder aufgerufen werden - in diesem Fall nur gameLoop()
   gameLoopHandle = setInterval(gameLoop, gameLoopIntervall);
 }
 
@@ -469,7 +475,7 @@ function startGame() {
 /*******************************/
 function gameLoop() {
   if (gameEnd) {
-    // alle im Intervall aufgerufenen Funktionen beenden
+    // gameLoop beenden
     clearInterval(gameLoopHandle);
     return;
   }
@@ -488,7 +494,7 @@ function gameLoop() {
     }
   }
 
-  // Anzahl Atome erhöhen
+  // Anzahl Atome verringern
   if (KEY_SHIFT && KEY_DOWN) {
     if (gameNotStarted) {
       if (atomsCnt > atomsMinCnt) {
@@ -501,13 +507,14 @@ function gameLoop() {
     }
   }
 
-  // Anzeige der Orbs ändern
+  // Anzeige der Orbs zwischen Standard- und Billardkugel-Modus hin und her schalten
   if (KEY_B && !toggleOrbsBlocked) {
+    toggleOrbsBlocked = true; // bis zum loslassen der B-Taste weiteren Aufruf blockieren
     toggleOrbs();
   }
 
   if (!KEY_B) {
-    toggleOrbsBlocked = false;
+    toggleOrbsBlocked = false; // Blockade aufheben
   }
 
   // Cursor nach rechts bewegen
@@ -570,11 +577,13 @@ function gameLoop() {
   if (KEY_ENTER) {
     switch (currentMode) {
       case mode.Beam:
+        // Strahlengang berechnen
         gameNotStarted = false;
         document.getElementById("orbs").innerHTML = "";
         calculateBeam();
         break;
       case mode.Set:
+        // Atom auf dem Experimentierfeld setzen oder löschen
         toggleSetAtom();
         setAtomCursorBlocked = true;
         break;
@@ -587,14 +596,15 @@ function gameLoop() {
   if (!KEY_ENTER) {
     switch (currentMode) {
       case mode.Beam:
+        // Abfrage-Cursor wieder blau anzeigen
         if (rimFree == true) {
           questionMark = questionMarks[0];
           document.getElementById(beamCursor).innerHTML = questionMark;
         }
-        beamCursorBlocked = false;
+        beamCursorBlocked = false; // Blockade des Abrage-Cursor aufheben
         break;
-      case mode.Set:
-        setAtomCursorBlocked = false;
+      case mode.Set:        
+        setAtomCursorBlocked = false; // Blockade des Setz-Cursor aufheben
         break;
       default:
         console.log("KEY_ENTER up: Modus nicht definiert.");
@@ -602,14 +612,17 @@ function gameLoop() {
   }
 
   if (KEY_CONTROL) {
+    // zwischen Abfrage- und Setz-Modus hin und her wechseln
     switchMode();
   }
 
   if (!KEY_CONTROL) {
+    // Blockade der STRG/CTRL-Taste aufheben
     setCursorBlocked = false;
   }
 
   if (KEY_E) {
+    // Resultat anzeigen
     calculateResult();
   }
 
@@ -651,25 +664,27 @@ function gameLoop() {
   document.getElementById("status").innerHTML = gamestatus;
 }
 
-/*************************************/
-/* Wechsel zwischen der Standard und */
-/* Billardkugel-Anzeige hin und her  */
-/*************************************/
+/**************************************/
+/* Wechselt zwischen der Standard und */
+/* Billardkugel-Anzeige hin und her   */
+/**************************************/
 function toggleOrbs() {
   if (gameNotStarted) {
-    toggleOrbsBlocked = true;
     if (orbsB) {
+      // Standard-Anzeige wieder aktivieren
       orbs = orbs1;
       randomOrbs = true;
       orbsB = false;
       document.getElementById("orbs").innerHTML = orbs1[0];
     } else {
+      // Billard-Anzeige aktivieren
       orbs = orbs2;
       randomOrbs = false;
       orbsB = true;
       document.getElementById("orbs").innerHTML = orbs2[0];
     }
   } else {
+    // wenn Wechsel nicht mehr möglich Benutzer informieren
     window.alert(textAlert6);
     clearKeyboardBuffer();
   }
@@ -738,6 +753,7 @@ function getOrb() {
   let sucess = false;
   let orb;
 
+  // entweder
   if (randomOrbs) {
     // zufälligen noch nicht genutzen Orb auswählen
     do {
@@ -749,7 +765,7 @@ function getOrb() {
     } while (sucess == false);
     orb = orbs[x];
   } else {
-    // den nächsten nicht genutzten Orb in aufsteigender Reihenfolge auswählen
+    // oder den nächsten nicht genutzten Orb in aufsteigender Reihenfolge auswählen
     orb = orbs[currOrb];
     currOrb++;
   }
@@ -770,7 +786,9 @@ function rand(min, max) {
 /* gegen den Uhrzeigersinn          */
 /************************************/
 function moveBeamCursorRight() {
-  if (rimFree == false) return;
+  // Funktion verlassen wenn es kein freies Abragefeld mehr gibt  
+  if (rimFree == false) return; 
+  
   lastBeamCursor = beamCursor;
   let free = false;
   do {
@@ -793,7 +811,9 @@ function moveBeamCursorRight() {
 /* im Uhrzeigersinn                 */
 /************************************/
 function moveBeamCursorLeft() {
+  // Funktion verlassen wenn es kein freies Abragefeld mehr gibt  
   if (rimFree == false) return;
+
   lastBeamCursor = beamCursor;
   let free = false;
   do {
@@ -1011,11 +1031,11 @@ function deleteAtomProbeField() {
   document.getElementById("setcnt").innerHTML = placedAtoms[setAtomsCnt];
 }
 
-/************************************/
-/* Verteilt atomsCnt Atome auf dem  */
-/* Experimentierfeld auf zufälligen */
-/* Positionen                       */
-/************************************/
+/**************************************/
+/* Verteilt <atomsCnt> Atome auf dem  */
+/* Experimentierfeld auf zufälligen   */
+/* Positionen                         */
+/**************************************/
 function setAtoms() {
   for (let x = 0; x <= 7; x++) {
     for (let y = 0; y <= 7; y++) {
@@ -1154,21 +1174,21 @@ function calculateBeam() {
 /* über das Experementierfeld     */
 /**********************************/
 function moveBeam(beamContainer) {
-  // Hauptstrahl
+  // Hauptstrahl MainBeam
   let fieldMB = {
     x: undefined,
     y: undefined,
     valid: true,
   };
 
-  // Nebenstrahl links
+  // Nebenstrahl links LeftBeam
   let fieldLB = {
     x: undefined,
     y: undefined,
     valid: false,
   };
 
-  // Nebenstrahl rechts
+  // Nebenstrahl rechts RightBeam
   let fieldRB = {
     x: undefined,
     y: undefined,
