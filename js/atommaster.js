@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 1.71                           */
-/* 21.06.2022                             */
+/* Version 1.72                           */
+/* 22.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -584,8 +584,10 @@ function gameLoop() {
         break;
       case mode.Set:
         // Atom auf dem Experimentierfeld setzen oder löschen
-        toggleSetAtom();
-        setAtomCursorBlocked = true;
+        if (!setAtomCursorBlocked) {
+          setAtomCursorBlocked = true; // bis zum loslassen der Enter-Taste weiteren Aufruf blockieren
+          toggleSetAtom();
+        }
         break;
       default:
         console.log("KEY_ENTER down: Modus nicht definiert.");
@@ -611,8 +613,9 @@ function gameLoop() {
     }
   }
 
-  if (KEY_CONTROL) {
+  if (KEY_CONTROL && !setCursorBlocked) {
     // zwischen Abfrage- und Setz-Modus hin und her wechseln
+    setCursorBlocked = true; // bis zum loslassen der STRG-Taste weiteren Aufruf blockieren
     switchMode();
   }
 
@@ -711,11 +714,9 @@ function clearKeyboardBuffer() {
 /* Modi                           */
 /**********************************/
 function switchMode() {
-  if (setCursorBlocked) return;
   switch (currentMode) {
     case mode.Beam:
       currentMode = mode.Set;
-      setCursorBlocked = true;
       document.getElementById(getSetID()).innerHTML = atomQuestionMark;
       questionMark = questionMarks[1];
       if (!hold) {
@@ -726,7 +727,6 @@ function switchMode() {
       break;
     case mode.Set:
       currentMode = mode.Beam;
-      setCursorBlocked = true;
       if (atomSetArray[setCursorX][setCursorY] == 0) {
         document.getElementById(getSetID()).innerHTML = "";
       } else {
@@ -994,8 +994,6 @@ function moveSetCursorDown() {
 /* Set-Cursors                  */
 /********************************/
 function toggleSetAtom() {
-  if (setAtomCursorBlocked == true) return;
-
   let fid = getSetID();
 
   if (atomSetArray[setCursorX][setCursorY] == 0) {
