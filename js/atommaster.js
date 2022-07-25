@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 1.72                           */
-/* 22.06.2022                             */
+/* Version 1.8                            */
+/* 25.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -15,7 +15,8 @@
 /* Globale Variablen und Konstanten   */
 /**************************************/
 
-// Array für die zu suchenden Atome
+/** Variablen und Konstanten die abhängig von der Größe des Experimentierfeldes sind **/
+// Array für die zu suchenden Atome für 8 x 8 Felder
 let atomArray = [
   [0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0],
@@ -27,7 +28,7 @@ let atomArray = [
   [0, 0, 0, 0, 0, 0, 0, 0],
 ];
 
-// Array für die gesetzen Atome
+// Array für die gesetzten Atome
 let atomSetArray = [
   [0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0],
@@ -38,6 +39,18 @@ let atomSetArray = [
   [0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0],
 ];
+
+// X-Breite des Experimentierfeldes - 1 weil wir bei 0 anfangen
+const lengthX = 7;
+
+// Y-Breite des Experimentierfeldes - 1 weil wir bei 0 anfangen
+const lengthY = 7;
+
+// Anzahl der Abfragefelder (Rim-IDs)
+const numberOfRimIDs = 32;
+
+// Anzahl der Orbs zur Anzeige von Strahleintritt und Strahlaustritt
+const numberOfOrbs = 16;
 
 // Array mit der Zuordnung der Position des Abfrage-Cursors (Rim-ID) zu den Feldkoordinaten und der Strahlrichtung
 // beam2Coordinates[0] ist null, damit die Rim-ID direkt als Index für das Array verwendet werden kann
@@ -113,6 +126,8 @@ const coordinates2Beam = new Map([
   ["0.0.Y", 32],
 ]);
 
+/** Ende Variablen und Konstanten die abhängig von der Größe des Experimentierfeldes sind **/
+
 // Array mit den Modi
 const mode = {
   Beam: Symbol("beam"), // Abfrage-Cursor bewegen, Untersuchungsstrahl abfeuern
@@ -140,7 +155,7 @@ let toggleOrbsBlocked = false;
 
 // Speicher der genutzten Orbs
 let orbsUsed = [];
-for (let i = 0; i < 16; i++) {
+for (let i = 0; i < numberOfOrbs; i++) {
   orbsUsed[i] = false;
 }
 
@@ -166,7 +181,7 @@ let atomsMinCnt = 3;
 // Maximal zu ermittelnde Atome
 let atomsMaxCnt = 6;
 
-// Flag ob das Spiel begonnen hat, 
+// Flag ob das Spiel begonnen hat,
 // wird auf false gesetzt sobald ein Strahl abgeschossen wurde
 let gameNotStarted = true;
 
@@ -174,8 +189,8 @@ let gameNotStarted = true;
 let setAtomsCnt = 0;
 
 // Speicher für die belegten Abfragefelder (Rim-IDs)
-let erg = [33];
-for (let i = 0; i < 33; i++) {
+let erg = [numberOfRimIDs + 1]; // wir fangen nicht bei 0 an
+for (let i = 0; i < numberOfRimIDs + 1; i++) {
   erg[i] = false;
 }
 
@@ -284,7 +299,7 @@ let atomImage = '<img src="img/atom.png">'; // Grafik zur Anzeige von Atomen auf
 let orbA = '<img src="img/orbA.png">'; // Anzeige Absorbiert
 let orbR = '<img src="img/orbR.png">'; // Anzeige Reflektiert
 
-// Array mit den Orbs zur Anzeige von Strahleintritt und Strahlaustritt
+// *** Array mit den Orbs zur Anzeige von Strahleintritt und Strahlaustritt ***
 // Standard-Modus
 let orbs1 = [
   '<img src="img/orb1.png">',
@@ -304,7 +319,7 @@ let orbs1 = [
   '<img src="img/orb15.png">',
   '<img src="img/orb16.png">',
 ];
-// Billardkugel-Modus
+// Billardkugel-Modus - für Menschen die Probleme haben Farben zu unterscheiden
 let orbs2 = [
   '<img src="img/orbA1.png">',
   '<img src="img/orbA2.png">',
@@ -605,7 +620,7 @@ function gameLoop() {
         }
         beamCursorBlocked = false; // Blockade des Abrage-Cursor aufheben
         break;
-      case mode.Set:        
+      case mode.Set:
         setAtomCursorBlocked = false; // Blockade des Setz-Cursor aufheben
         break;
       default:
@@ -693,7 +708,6 @@ function toggleOrbs() {
   }
 }
 
-
 /*************************************/
 /* Setzt alle Tasten auf losgelassen */
 /*************************************/
@@ -757,7 +771,7 @@ function getOrb() {
   if (randomOrbs) {
     // zufälligen noch nicht genutzen Orb auswählen
     do {
-      x = rand(0, 15);
+      x = rand(0, numberOfOrbs - 1); // wir fangen bei 0 und nicht bei 1 an
       if (orbsUsed[x] == false) {
         orbsUsed[x] = true;
         sucess = true;
@@ -786,14 +800,14 @@ function rand(min, max) {
 /* gegen den Uhrzeigersinn          */
 /************************************/
 function moveBeamCursorRight() {
-  // Funktion verlassen wenn es kein freies Abragefeld mehr gibt  
-  if (rimFree == false) return; 
-  
+  // Funktion verlassen wenn es kein freies Abragefeld mehr gibt
+  if (rimFree == false) return;
+
   lastBeamCursor = beamCursor;
   let free = false;
   do {
     ++beamCursor;
-    if (beamCursor == 33) {
+    if (beamCursor == numberOfRimIDs + 1) {
       beamCursor = 1;
     }
     if (erg[beamCursor] == false) {
@@ -811,7 +825,7 @@ function moveBeamCursorRight() {
 /* im Uhrzeigersinn                 */
 /************************************/
 function moveBeamCursorLeft() {
-  // Funktion verlassen wenn es kein freies Abragefeld mehr gibt  
+  // Funktion verlassen wenn es kein freies Abragefeld mehr gibt
   if (rimFree == false) return;
 
   lastBeamCursor = beamCursor;
@@ -819,7 +833,7 @@ function moveBeamCursorLeft() {
   do {
     --beamCursor;
     if (beamCursor == 0) {
-      beamCursor = 32;
+      beamCursor = numberOfRimIDs;
     }
     if (erg[beamCursor] == false) {
       free = true;
@@ -852,8 +866,8 @@ function moveBeamCursorLeft() {
  *     Rim-Felder.
  ******************************/
 function setCursorAfterBeam(count) {
-  if (count == 2 && rimUsed == 30) return;
-  if (count == 1 && rimUsed == 31) return;
+  if (count == 2 && rimUsed == numberOfRimIDs - 2) return;
+  if (count == 1 && rimUsed == numberOfRimIDs - 1) return;
 
   moveBeamCursorRight();
 }
@@ -912,7 +926,7 @@ function moveSetCursorRight() {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
   let fid;
-  if (setCursorX < 7) {
+  if (setCursorX < lengthX) {
     setCursorX++;
     fid = getLastSetID();
     if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
@@ -975,7 +989,7 @@ function moveSetCursorDown() {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
   let fid;
-  if (setCursorY < 7) {
+  if (setCursorY < lengthY) {
     setCursorY++;
     fid = getLastSetID();
     if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
@@ -1035,18 +1049,21 @@ function deleteAtomProbeField() {
 /* Positionen                         */
 /**************************************/
 function setAtoms() {
-  for (let x = 0; x <= 7; x++) {
-    for (let y = 0; y <= 7; y++) {
+  // bereits gesetzte Atome löschen
+  for (let x = 0; x <= lengthX; x++) {
+    for (let y = 0; y <= lengthY; y++) {
       atomArray[x][y] = 0;
+      // auch aus Anzeige löschen, falls showAtoms() aktiv
       document.getElementById("f" + x + y).innerHTML = "";
     }
   }
 
+  // Atome zufällig verteilen
   for (let i = 1; i <= atomsCnt; i++) {
     let sucess = false;
     do {
-      let x = rand(1, 8) - 1;
-      let y = rand(1, 8) - 1;
+      let x = rand(1, lengthX + 1) - 1;
+      let y = rand(1, lengthY + 1) - 1;
       if (atomArray[x][y] == 0) {
         sucess = true;
         atomArray[x][y] = 1;
@@ -1061,8 +1078,8 @@ function setAtoms() {
 /* Experimentierfeld an        */
 /*******************************/
 function showAtoms() {
-  for (let x = 0; x <= 7; x++) {
-    for (let y = 0; y <= 7; y++) {
+  for (let x = 0; x <= lengthX; x++) {
+    for (let y = 0; y <= lengthY; y++) {
       if (atomArray[x][y] == 1) {
         document.getElementById("f" + x + y).innerHTML = atomImage;
       }
@@ -1195,14 +1212,14 @@ function moveBeam(beamContainer) {
 
   if (beamContainer.mode == "incX") {
     console.log("moveBeam() incX läuft.");
-    if (beamContainer.x < 7) {
+    if (beamContainer.x < lengthX) {
       beamContainer.x++;
       if (beamContainer.y > 0) {
         fieldLB.x = beamContainer.x;
         fieldLB.y = beamContainer.y - 1;
         fieldLB.valid = true;
       }
-      if (beamContainer.y < 7) {
+      if (beamContainer.y < lengthY) {
         fieldRB.x = beamContainer.x;
         fieldRB.y = beamContainer.y + 1;
         fieldRB.valid = true;
@@ -1220,7 +1237,7 @@ function moveBeam(beamContainer) {
         fieldLB.y = beamContainer.y;
         fieldLB.valid = true;
       }
-      if (beamContainer.x < 7) {
+      if (beamContainer.x < lengthX) {
         fieldRB.x = beamContainer.x + 1;
         fieldRB.y = beamContainer.y;
         fieldRB.valid = true;
@@ -1238,7 +1255,7 @@ function moveBeam(beamContainer) {
         fieldRB.y = beamContainer.y - 1;
         fieldRB.valid = true;
       }
-      if (beamContainer.y < 7) {
+      if (beamContainer.y < lengthY) {
         fieldLB.x = beamContainer.x;
         fieldLB.y = beamContainer.y + 1;
         fieldLB.valid = true;
@@ -1249,14 +1266,14 @@ function moveBeam(beamContainer) {
     }
   } else if (beamContainer.mode == "incY") {
     console.log("moveBeam() incY läuft.");
-    if (beamContainer.y < 7) {
+    if (beamContainer.y < lengthY) {
       beamContainer.y++;
       if (beamContainer.x > 0) {
         fieldRB.x = beamContainer.x - 1;
         fieldRB.y = beamContainer.y;
         fieldRB.valid = true;
       }
-      if (beamContainer.x < 7) {
+      if (beamContainer.x < lengthX) {
         fieldLB.x = beamContainer.x + 1;
         fieldLB.y = beamContainer.y;
         fieldLB.valid = true;
@@ -1442,8 +1459,8 @@ function calculateResult() {
   wrong = 0;
 
   // Auswertung der Treffer und setzen der grafischen Darstellung
-  for (let x = 0; x <= 7; x++) {
-    for (let y = 0; y <= 7; y++) {
+  for (let x = 0; x <= lengthX; x++) {
+    for (let y = 0; y <= lengthY; y++) {
       if (atomArray[x][y] == 1 && atomSetArray[x][y] == 1) {
         document.getElementById(getID(x, y)).innerHTML = atomRight;
         ++hits;
