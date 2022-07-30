@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 1.8                            */
-/* 25.06.2022                             */
+/* Version 2.0                            */
+/* 30.06.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -131,7 +131,7 @@ const coordinates2Beam = new Map([
 // Array mit den Modi
 const mode = {
   Beam: Symbol("beam"), // Abfrage-Cursor bewegen, Untersuchungsstrahl abfeuern
-  Set: Symbol("set"), // Atome auf dem Experementierfeld setzen
+  Set: Symbol("set"), // Atome auf dem Experementierfeld setzen oder löschen
 };
 
 // aktueller Modus
@@ -144,7 +144,7 @@ let randomOrbs = true;
 /** Blockade-Flags verhindern **/
 /** das mehrfache Ausführen   **/
 /** eines Tastatur-Befehls    **/
-/** bevor die jeweile Taste   **/
+/** bevor die jeweilige Taste **/
 /** wieder losgelassen wurde  **/
 // ist der Cursor blockiert
 let beamCursorBlocked = false;
@@ -152,6 +152,8 @@ let setCursorBlocked = false;
 let setAtomCursorBlocked = false;
 // ist der Wechsel zwischen Standard- und Billardkugel Anzeige blockiert
 let toggleOrbsBlocked = false;
+// ist der Wechsel zum Lern-Modus und zurück blockiert
+let toogleLearnModeBlocked = false;
 
 // Speicher der genutzten Orbs
 let orbsUsed = [];
@@ -212,6 +214,9 @@ let hits = 0;
 let missed = 0;
 let wrong = 0;
 
+// Flag ob Lern-Modus aktiv ist d.h. ob Atome angezeigt werden sollen
+let learnModeActive = false;
+
 // Flags ob Spiel zu Ende ist.
 let gameEndShow = false; // Spielergebnis anzeigen und dann Spiel (gameLoop()) beeenden
 let gameEnd = false; // Spiel beenden - wird gesetzt nachdem Spielergebnis angezeigt wurde
@@ -226,6 +231,9 @@ let textAlert3;
 let textAlert4;
 let textAlert5;
 let textAlert6;
+let textAlert7;
+let textAlert8;
+let textAlert9;
 let textAtoms;
 let textTrials;
 let textPoints;
@@ -242,6 +250,9 @@ if (navigator.language.indexOf("de") > -1) {
   textAlert4 = deAlert4;
   textAlert5 = deAlert5;
   textAlert6 = deAlert6;
+  textAlert7 = deAlert7;
+  textAlert8 = deAlert8;
+  textAlert9 = deAlert9;
   textAtoms = deAtoms;
   textTrials = deTrials;
   textPoints = dePoints;
@@ -256,6 +267,9 @@ if (navigator.language.indexOf("de") > -1) {
   textAlert4 = engAlert4;
   textAlert5 = engAlert5;
   textAlert6 = engAlert6;
+  textAlert7 = engAlert7;
+  textAlert8 = engAlert8;
+  textAlert9 = engAlert9;
   textAtoms = engAtoms;
   textTrials = engTrials;
   textPoints = engPoints;
@@ -354,6 +368,7 @@ let KEY_ENTER = false; // die Eingabe-Taste
 let KEY_CONTROL = false; // die STRG-Taste
 let KEY_B = false; // die B-Taste
 let KEY_E = false; // die E-Taste
+let KEY_L = false; // die L-Taste
 let KEY_SHIFT = false; // die Shift-Taste
 
 /**********************************/
@@ -404,9 +419,15 @@ document.onkeydown = function (e) {
   if (e.key == "b" || e.key == "B") {
     KEY_B = true;
   }
+
   // E wurde gedrückt
   if (e.key == "e" || e.key == "E") {
     KEY_E = true;
+  }
+
+  // L wurde gedrückt
+  if (e.key == "l" || e.key == "L") {
+    KEY_L = true;
   }
 };
 
@@ -455,9 +476,15 @@ document.onkeyup = function (e) {
   if (e.key == "b" || e.key == "B") {
     KEY_B = false;
   }
+
   // E wurde losgelassen
   if (e.key == "e" || e.key == "E") {
     KEY_E = false;
+  }
+
+  // L wurde losgelassen
+  if (e.key == "l" || e.key == "L") {
+    KEY_L = false;
   }
 };
 
@@ -495,6 +522,26 @@ function gameLoop() {
     return;
   }
 
+  // Lern-Modus ein und ausschalten
+  if (KEY_L && !toogleLearnModeBlocked) {
+    toogleLearnModeBlocked = true; // bis zum loslassen der L-Taste weiteren Aufruf blockieren
+    if (gameNotStarted) {
+      if (learnModeActive) {
+        learnModeActive = false;
+        setAtoms();
+      } else {
+        learnModeActive = true;
+        setAtoms();
+      }
+    } else {
+      userMessage(textAlert7);
+    }
+  }
+
+  if (!KEY_L) {
+    toogleLearnModeBlocked = false; // Blockade aufheben
+  }
+
   /** Anzahl Atome verändern **/
   // Anzahl Atome erhöhen
   if (KEY_SHIFT && KEY_UP) {
@@ -504,8 +551,7 @@ function gameLoop() {
         setAtoms();
       }
     } else {
-      window.alert(textAlert5);
-      clearKeyboardBuffer();
+      userMessage(textAlert5);
     }
   }
 
@@ -517,8 +563,7 @@ function gameLoop() {
         setAtoms();
       }
     } else {
-      window.alert(textAlert5);
-      clearKeyboardBuffer();
+      userMessage(textAlert5);
     }
   }
 
@@ -682,10 +727,10 @@ function gameLoop() {
   document.getElementById("status").innerHTML = gamestatus;
 }
 
-/**************************************/
-/* Wechselt zwischen der Standard und */
-/* Billardkugel-Anzeige hin und her   */
-/**************************************/
+/*************************************
+ * Wechselt zwischen der Standard und
+ * Billardkugel-Anzeige hin und her
+ *************************************/
 function toggleOrbs() {
   if (gameNotStarted) {
     if (orbsB) {
@@ -703,14 +748,13 @@ function toggleOrbs() {
     }
   } else {
     // wenn Wechsel nicht mehr möglich Benutzer informieren
-    window.alert(textAlert6);
-    clearKeyboardBuffer();
+    userMessage(textAlert6);
   }
 }
 
-/*************************************/
-/* Setzt alle Tasten auf losgelassen */
-/*************************************/
+/************************************
+ * Setzt alle Tasten auf losgelassen
+ ************************************/
 function clearKeyboardBuffer() {
   KEY_SHIFT = false;
   KEY_CONTROL = false;
@@ -721,22 +765,26 @@ function clearKeyboardBuffer() {
   KEY_ENTER = false;
   KEY_B = false;
   KEY_E = false;
+  KEY_L = false;
 }
 
-/**********************************/
-/* Umschalten der verschiedenen   */
-/* Modi                           */
-/**********************************/
+/************************************
+ * Umschalten der verschiedenen Modi
+ ************************************/
 function switchMode() {
   switch (currentMode) {
     case mode.Beam:
-      currentMode = mode.Set;
-      document.getElementById(getSetID()).innerHTML = atomQuestionMark;
-      questionMark = questionMarks[1];
-      if (!hold) {
-        document.getElementById(beamCursor).innerHTML = questionMark;
+      if (!learnModeActive) {
+        currentMode = mode.Set;
+        document.getElementById(getSetID()).innerHTML = atomQuestionMark;
+        questionMark = questionMarks[1];
+        if (!hold) {
+          document.getElementById(beamCursor).innerHTML = questionMark;
+        } else {
+          document.getElementById("hold").innerHTML = questionMark;
+        }
       } else {
-        document.getElementById("hold").innerHTML = questionMark;
+        userMessage(textAlert9);
       }
       break;
     case mode.Set:
@@ -758,10 +806,27 @@ function switchMode() {
   }
 }
 
-/************************************/
-/* Gibt einen eindeutigen Orb       */
-/* aus dem Orb-Array zurück         */
-/************************************/
+/*************************************************
+ * Gibt eine Nachricht an den Benutzer
+ * über ein Fenster aus was mit einem
+ * Ok-Button geschlossen wird. 
+ * 
+ * Stellt alle Tastatur-Eingaben
+ * auf false
+ * 
+ * @param {*} message  die auszugebende Nachricht
+ *************************************************/
+function userMessage(message) {
+  window.alert(message);
+  clearKeyboardBuffer();
+}
+
+/***************************************
+ * Gibt einen eindeutigen Orb (Grafik)
+ * aus dem Orb-Array zurück 
+ * 
+ * @returns Orb
+ ***************************************/
 function getOrb() {
   let x = 0;
   let sucess = false;
@@ -786,19 +851,25 @@ function getOrb() {
   return orb;
 }
 
-/*************************************/
-/* Gibt eine Zufallszahl aus der     */
-/* Zahlenmenge min bis max zurück    */
-/*************************************/
+/**********************************************************
+ * Gibt eine Zufallszahl aus der
+ * Zahlenmenge min bis max zurück
+ * 
+ * @param {*} min kleinste Zahl
+ * @param {*} max größte Zahl
+ * @returns Zufallszahl aus der Zahlenmenge min bis max 
+ **********************************************************/
 function rand(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-/************************************/
-/* Setzt den Abfrage-Cursor auf das */
-/* nächste freie Feld               */
-/* gegen den Uhrzeigersinn          */
-/************************************/
+/**************************************
+ * Setzt den Abfrage-Cursor auf das
+ * nächste freie Feld 
+ * gegen den Uhrzeigersinn
+ * 
+ * @returns nothing
+ **************************************/
 function moveBeamCursorRight() {
   // Funktion verlassen wenn es kein freies Abragefeld mehr gibt
   if (rimFree == false) return;
@@ -819,12 +890,14 @@ function moveBeamCursorRight() {
   document.getElementById(beamCursor).innerHTML = questionMark;
 }
 
-/************************************/
-/* Setzt den Abfrage-Cursor auf das */
-/* nächste freie Feld               */
-/* im Uhrzeigersinn                 */
-/************************************/
-function moveBeamCursorLeft() {
+/**************************************
+ * Setzt den Abfrage-Cursor auf das
+ * nächste freie Feld 
+ * im Uhrzeigersinn
+ * 
+ * @returns nothing
+ **************************************/
+ function moveBeamCursorLeft() {
   // Funktion verlassen wenn es kein freies Abragefeld mehr gibt
   if (rimFree == false) return;
 
@@ -843,15 +916,6 @@ function moveBeamCursorLeft() {
   document.getElementById(lastBeamCursor).innerHTML = "";
   document.getElementById(beamCursor).innerHTML = questionMark;
 }
-
-/*******************************/
-/* Bewegt den Abfrage-Cursor   */
-/* auf das nächste freie Feld  */
-/* nach rechts.                */
-/* Falls kein Feld frei ist    */
-/* wird die Funktion sofort    */
-/* verlassen                   */
-/*******************************/
 
 /******************************
  * Bewegt den Abfrage-Cursor
@@ -872,45 +936,58 @@ function setCursorAfterBeam(count) {
   moveBeamCursorRight();
 }
 
-/*******************************/
-/* Ermittelt aus der aktuellen */
-/* Set-Cursor Position die     */
-/* zugehörige Feld-ID des      */
-/* Experimentierfeldes und     */
-/* gibt diese zurück           */
-/*******************************/
+/*******************************
+ * Ermittelt aus der aktuellen
+ * Set-Cursor Position die
+ * zugehörige Feld-ID des
+ * Experimentierfeldes und
+ * gibt diese zurück 
+ *  
+ * @returns aktuelle Feld-ID
+ *******************************/
 function getSetID() {
   let setID = "f" + setCursorX + setCursorY;
   return setID;
 }
 
-/********************************/
-/* Ermittelt aus der vorherigen */
-/* Set-Cursor Position die      */
-/* zugehörige Feld-ID des       */
-/* Experimentierfeldes und      */
-/* gibt diese zurück            */
-/********************************/
+/*******************************
+ * Ermittelt aus der vorherigen
+ * Set-Cursor Position die
+ * zugehörige Feld-ID des
+ * Experimentierfeldes und
+ * gibt diese zurück 
+ *  
+ * @returns vorherige Feld-ID
+ *******************************/
+
 function getLastSetID() {
   let setLastID = "f" + setCursorLastX + setCursorLastY;
   return setLastID;
 }
 
-/****************************/
-/* Ermittelt die Feld-ID    */
-/* aus den x, y Koordinaten */
-/* und gibt diese zurück    */
-/****************************/
+/****************************
+ * Ermittelt die Feld-ID
+ * aus den x, y Koordinaten
+ * 
+ * @param {*} x Koordinate
+ * @param {*} y Koordinate
+ * @returns Feld-ID
+ ****************************/
 function getID(x, y) {
   let setID = "f" + x + y;
   return setID;
 }
 
-/************************************/
-/* Ermittelt aus den Koordinaten    */
-/* x und y sowie der Strahlrichtung */
-/* die Rim-ID und gibt diese zurück */
-/************************************/
+/************************************
+ * Ermittelt aus den Koordinaten
+ * x und y sowie der Strahlrichtung
+ * die Rim-ID und gibt diese zurück
+ * 
+ * @param {*} x Koordiante
+ * @param {*} y Koordiante
+ * @param {*} direction Richtung
+ * @returns Rim-ID
+ ************************************/
 function getRimID(x, y, direction) {
   let cutDirec = direction.substring(3, 4);
   let key = x + "." + y + "." + cutDirec;
@@ -918,10 +995,10 @@ function getRimID(x, y, direction) {
   return rimID;
 }
 
-/********************************/
-/* Setzt den Set-Cursor eine    */
-/* Position nach rechts         */
-/********************************/
+/********************************
+ * Setzt den Set-Cursor eine
+ * Position nach rechts
+ ********************************/
 function moveSetCursorRight() {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
@@ -939,11 +1016,11 @@ function moveSetCursorRight() {
   }
 }
 
-/********************************/
-/* Setzt den Set-Cursor eine    */
-/* Position nach links          */
-/********************************/
-function moveSetCursorLeft() {
+/********************************
+ * Setzt den Set-Cursor eine
+ * Position nach links
+ ********************************/
+ function moveSetCursorLeft() {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
   let fid;
@@ -960,11 +1037,11 @@ function moveSetCursorLeft() {
   }
 }
 
-/********************************/
-/* Setzt den Set-Cursor eine    */
-/* Position nach oben           */
-/********************************/
-function moveSetCursorUp() {
+/********************************
+ * Setzt den Set-Cursor eine
+ * Position nach oben
+ ********************************/
+ function moveSetCursorUp() {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
   let fid;
@@ -981,11 +1058,11 @@ function moveSetCursorUp() {
   }
 }
 
-/********************************/
-/* Setzt den Set-Cursor eine    */
-/* Position nach unten          */
-/********************************/
-function moveSetCursorDown() {
+/********************************
+ * Setzt den Set-Cursor eine
+ * Position nach unten
+ ********************************/
+ function moveSetCursorDown() {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
   let fid;
@@ -1002,11 +1079,11 @@ function moveSetCursorDown() {
   }
 }
 
-/********************************/
-/* Setzt und löscht im Wechsel  */
-/* ein Atom an der Position des */
-/* Set-Cursors                  */
-/********************************/
+/********************************
+ * Setzt und löscht im Wechsel  
+ * ein Atom an der Position des 
+ * Set-Cursors                  
+ ********************************/
 function toggleSetAtom() {
   let fid = getSetID();
 
@@ -1019,35 +1096,35 @@ function toggleSetAtom() {
   }
 }
 
-/********************************/
-/* Setzt ein Atom an der        */
-/* Position des Set-Cursors     */
-/********************************/
+/********************************
+ * Setzt ein Atom an der        
+ * Position des Set-Cursors     
+ ********************************/
 function setAtomProbeField() {
   if (setAtomsCnt < atomsCnt) {
     atomSetArray[setCursorX][setCursorY] = 1;
     ++setAtomsCnt;
     document.getElementById("setcnt").innerHTML = placedAtoms[setAtomsCnt];
   } else {
-    window.alert(textAlert3 + atomsCnt + textAlert4);
+    userMessage(textAlert3 + atomsCnt + textAlert4);
   }
 }
 
-/********************************/
-/* Löscht ein Atom an der       */
-/* Position des Set-Cursors     */
-/********************************/
+/********************************
+ * Löscht ein Atom an der      
+ * Position des Set-Cursors     
+ ********************************/
 function deleteAtomProbeField() {
   atomSetArray[setCursorX][setCursorY] = 0;
   --setAtomsCnt;
   document.getElementById("setcnt").innerHTML = placedAtoms[setAtomsCnt];
 }
 
-/**************************************/
-/* Verteilt <atomsCnt> Atome auf dem  */
-/* Experimentierfeld auf zufälligen   */
-/* Positionen                         */
-/**************************************/
+/**************************************
+ * Verteilt <atomsCnt> Atome auf dem  
+ * Experimentierfeld auf zufälligen   
+ * Positionen                         
+ **************************************/
 function setAtoms() {
   // bereits gesetzte Atome löschen
   for (let x = 0; x <= lengthX; x++) {
@@ -1070,13 +1147,15 @@ function setAtoms() {
       }
     } while (sucess == false);
   }
-  // showAtoms();
+  if (learnModeActive) {
+    showAtoms();
+  }
 }
 
-/*******************************/
-/* Zeigt die Atome auf dem     */
-/* Experimentierfeld an        */
-/*******************************/
+/*******************************
+ * Zeigt die Atome auf dem     
+ * Experimentierfeld an        
+ *******************************/
 function showAtoms() {
   for (let x = 0; x <= lengthX; x++) {
     for (let y = 0; y <= lengthY; y++) {
@@ -1087,11 +1166,11 @@ function showAtoms() {
   }
 }
 
-/*******************************/
-/* Berechnet das Ergebnis      */
-/* einer Eingabe und zeigt     */
-/* es auf dem Spielbrett an    */
-/*******************************/
+/*******************************
+ * Berechnet das Ergebnis      
+ * einer Eingabe und zeigt     
+ * es auf dem Spielbrett an    
+ *******************************/
 function calculateBeam() {
   if (rimFree == false) return;
   if (beamCursorBlocked) return;
@@ -1184,10 +1263,13 @@ function calculateBeam() {
   }
 }
 
-/**********************************/
-/* Bewegt den Untersuchungsstrahl */
-/* über das Experementierfeld     */
-/**********************************/
+/*********************************************************
+ * Bewegt den Untersuchungsstrahl
+ * über das Experementierfeld
+ * 
+ * @param {*} beamContainer enthält alle benötigten Daten 
+ * @returns beamContainer mit abgeglichenen Daten
+ *********************************************************/
 function moveBeam(beamContainer) {
   // Hauptstrahl MainBeam
   let fieldMB = {
@@ -1289,18 +1371,23 @@ function moveBeam(beamContainer) {
   return beamContainer;
 }
 
-/*************************************/
-/* Überprüft den Untersuchungsstrahl */
-/* auf Richtungsänderung, Absorption */
-/* und Reflektion                    */
-/*************************************/
+/************************************************************
+ * Überprüft den Untersuchungsstrahl auf
+ * Richtungsänderung, Absorption und Reflektion
+ * 
+ * @param {*} fieldMB Hauptstrahl
+ * @param {*} fieldLB Nebenstrahl links
+ * @param {*} fieldRB Nebenstrahl rechts
+ * @param {*} beamContainer enthält alle benötigten Daten
+ * @returns beamContainer mit abgeglichenen Daten
+ ************************************************************/
 function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
   // Überprüfen auf Richtungsänderung, dabei zunächst Reflexion durch zwei Atome checken
   if (fieldLB.valid && fieldRB.valid) {
     if (
-      atomArray[fieldMB.x][fieldMB.y] == 0 &&
-      atomArray[fieldLB.x][fieldLB.y] == 1 &&
-      atomArray[fieldRB.x][fieldRB.y] == 1
+      atomArray[fieldMB.x][fieldMB.y] == 0 && // Hauptstrahl trifft auf kein Atom
+      atomArray[fieldLB.x][fieldLB.y] == 1 && // aber linker Nebenstrahl trifft auf Atom
+      atomArray[fieldRB.x][fieldRB.y] == 1 // und rechter Nebenstrahl triff auf Atom
     ) {
       console.log("Reflektion LB + RB!");
       beamContainer.beamEnd = true;
@@ -1342,7 +1429,8 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
         default:
           console.log("Unbekannter investigationMode " + investigationMode);
       }
-      // wenn nach einer Richtungsänderung das aktuelle Feld mit dem Eintrittsfeld identisch ist haben wir eine Reflektion
+      // wenn nach einer Richtungsänderung das aktuelle Feld mit dem Eintrittsfeld identisch ist 
+      // haben wir eine Reflektion
       if (
         beamContainer.x == beamContainer.ex &&
         beamContainer.y == beamContainer.ey
@@ -1388,7 +1476,8 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
         default:
           console.log("Unbekannter investigationMode " + investigationMode);
       }
-      // wenn nach einer Richtungsänderung das aktuelle Feld mit dem Eintrittsfeld identisch ist haben wir eine Reflektion
+      // wenn nach einer Richtungsänderung das aktuelle Feld mit dem Eintrittsfeld identisch ist 
+      // haben wir eine Reflektion
       if (
         beamContainer.x == beamContainer.ex &&
         beamContainer.y == beamContainer.ey
@@ -1418,12 +1507,15 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
   return beamContainer;
 }
 
-/*****************************************/
-/* Wenn ein Strahl das Experimentierfeld */
-/* durchquert hat, wird hier der Anfang  */
-/* und das Ende des Strahls mit zwei     */
-/* gleichfarbigen Kugeln markiert        */
-/*****************************************/
+/**********************************************************
+ * Diese Funktion wird aufgerufen wenn ein
+ * Strahl das Experimentierfeld durchquert hat, d.h. es 
+ * eine unterschiedliche Ein- und eine Austrittstelle gibt.
+ * Die Funktion markiert den Anfang und das Ende 
+ * des Strahls mit zwei gleichfarbigen Kugeln 
+ * 
+ * @param {*} beamContainer enthält alle benötigten Daten
+ **********************************************************/
 function setBeamEnd(beamContainer) {
   beamContainer.beamEnd = true;
   beamContainer.points = 2;
@@ -1438,19 +1530,26 @@ function setBeamEnd(beamContainer) {
   console.log("Strahlende: Anfang: " + beamEntry + " Ende: " + beamEnd);
 }
 
-/*************************************/
-/* Vergleicht die vom Spieler        */
-/* gesetzten Atome mit dem vom       */
-/* Computer versteckten, setzt dazu  */
-/* die entsprechenden Grafiken auf   */
-/* dem Eperimentierfeld und          */
-/* ermittelt den Punktestand         */
-/*************************************/
+/*************************************
+ * Vergleicht die vom Spieler        
+ * gesetzten Atome mit dem vom       
+ * Computer versteckten, setzt dazu  
+ * die entsprechenden Grafiken auf   
+ * dem Eperimentierfeld und         
+ * ermittelt den Punktestand   
+ * 
+ * @returns nothing      
+ *************************************/
 function calculateResult() {
+  // Spieler informieren, dass die Auswertung im Lern-Modus nicht aktiv ist
+  if (learnModeActive) {
+    userMessage(textAlert8);
+    return;
+  }
+
   // Spieler informieren, dass vor der Auswertung erst alle Atome gesetzt sein müssen
   if (setAtomsCnt < atomsCnt) {
-    window.alert(textAlert1 + atomsCnt + textAlert2);
-    KEY_E = false;
+    userMessage(textAlert1 + atomsCnt + textAlert2);
     return;
   }
 
