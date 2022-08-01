@@ -14,6 +14,12 @@ A detailed manual is available in the [doc](/doc) folder in [english](doc/Atomma
 People who find it difficult to distinguish different shades of color can change the 
 display mode of the beam passes before starting the game by pressing the B key.
 
+The learning mode can be switched on and off by pressing the L key. In the learning mode 
+the atoms set by the computer are displayed, allowing the player to become familiar with the course 
+of the beams.
+
+By default, sound effects are disabled. They can be switched on and off by pressing the S key.
+
 The cursor (the blue question mark) is moved with the 
 cursor keys left and right on the query fields to move around 
 the game field.  
@@ -55,6 +61,12 @@ Eine ausführliche Anleitung steht im [doc](/doc)-Ordner in [englischer](doc/Ato
 
 Personen denen es schwerfällt unterschiedliche Farbtöne zu unterscheiden, können 
 den Anzeigemodus der Strahldurchgänge vor Spielbeginn durch Betätigen der B-Taste ändern. 
+
+Durch Betätigen der L-Taste kann der Lern-Modus ein- und ausgeschaltet werden. Im Lern-Modus 
+werden die vom Computer gesetzten Atome angezeigt, wodurch sich der Spieler mit dem Verlauf 
+der Strahlen vertraut machen kann.
+
+Standartmäßig sind Soundeffekte deaktiviert. Sie können durch Betätigen der S-Taste ein- und aus-geschaltet werden.
 
 Der Cursor (das blaue Fragezeichen) wird mit den Cursor-Tasten links 
 und rechts auf den Abfragefeldern um das Spielfeld bewegt.
