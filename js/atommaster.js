@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 2.5                            */
-/* 31.06.2022                             */
+/* Version 2.6                            */
+/* 01.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -821,35 +821,35 @@ function initializeSound() {
 
   absorbtionSnd = new Howl({
     src: ["snd/absorbtion.mp3"],
-    volume: 0.2,
+    volume: 0.5,
     autoplay: false,
     html5: true,
   });
 
   reflectionSnd = new Howl({
     src: ["snd/reflection.mp3"],
-    volume: 0.2,
+    volume: 0.5,
     autoplay: false,
     html5: true,
   });
 
   beamEndSnd = new Howl({
     src: ["snd/beamEnd.mp3"],
-    volume: 0.2,
+    volume: 0.5,
     autoplay: false,
     html5: true,
   });
 
   setAtomSnd = new Howl({
     src: ["snd/setAtom.mp3"],
-    volume: 0.2,
+    volume: 0.5,
     autoplay: false,
     html5: true,
   });
 
   deleteAtomSnd = new Howl({
     src: ["snd/deleteAtom.mp3"],
-    volume: 0.2,
+    volume: 0.5,
     autoplay: false,
     html5: true,
   });
@@ -870,21 +870,21 @@ function initializeSound() {
 
   moveBeamCursorSnd = new Howl({
     src: ["snd/moveBeamCursor.mp3"],
-    volume: 0.2,
+    volume: 0.1,
     autoplay: false,
     html5: true,
   });
 
   moveSetCursorSnd = new Howl({
     src: ["snd/moveSetCursor.mp3"],
-    volume: 0.2,
+    volume: 0.1,
     autoplay: false,
     html5: true,
   });
 
   alertSnd = new Howl({
     src: ["snd/alert.mp3"],
-    volume: 0.2,
+    volume: 0.5,
     autoplay: false,
     html5: true,
   });
