@@ -66,7 +66,7 @@ Durch Betätigen der L-Taste kann der Lern-Modus ein- und ausgeschaltet werden. 
 werden die vom Computer gesetzten Atome angezeigt, wodurch sich der Spieler mit dem Verlauf 
 der Strahlen vertraut machen kann.
 
-Standartmäßig sind Soundeffekte deaktiviert. Sie können durch Betätigen der S-Taste ein- und aus-geschaltet werden.
+Standartmäßig sind Soundeffekte deaktiviert. Sie können durch Betätigen der S-Taste ein- und ausgeschaltet werden.
 
 Der Cursor (das blaue Fragezeichen) wird mit den Cursor-Tasten links 
 und rechts auf den Abfragefeldern um das Spielfeld bewegt.
