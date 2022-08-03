@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 2.6                            */
-/* 01.08.2022                             */
+/* Version 2.8                            */
+/* 03.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -157,8 +157,8 @@ let toogleLearnModeBlocked = false;
 // ist der Wechsel Lautsprecher an und aus blockiert
 let toogleSoundModeBlocked = false;
 
-// Flag Sound on oder off
-let soundActive = false;
+// Flag Sound on oder off - der Zustand wird in einem Cookie gespeichert
+let soundActive = true;
 
 // Flag Sound initialisiert
 let soundInitialized = false;
@@ -411,6 +411,11 @@ let KEY_SHIFT = false; // die Shift-Taste
 document.onkeydown = function (e) {
   // console.log(">" + e.key + "<");
 
+  // beim ersten Tastendruck Sound initialisieren
+  if (!soundInitialized) {
+    initializeSound();
+  }
+
   // Cursor nach rechts gedrückt
   if (e.key == "ArrowRight") {
     KEY_RIGHT = true;
@@ -473,6 +478,7 @@ document.onkeydown = function (e) {
 /**********************************/
 document.onkeyup = function (e) {
   // console.log(">" + e.key + "<");
+
   // Cursor nach rechts losgelassen
   if (e.key == "ArrowRight") {
     KEY_RIGHT = false;
@@ -537,6 +543,19 @@ document.onkeyup = function (e) {
 /*    aufgerufen                      */
 /**************************************/
 function startGame() {
+  // Cookie einlesen und Variablen setzen
+  readCookie();
+  console.log("soundActive: " + soundActive);
+
+  // Sound-Modus kurz anzeigen
+  if (soundActive) {
+    document.getElementById("speaker").innerHTML = soundOn;
+    setTimeout(clearSoundField, 4000);
+  } else {
+    document.getElementById("speaker").innerHTML = soundOff;
+    setTimeout(clearSoundField, 4000);
+  }
+
   // Abfrage-Modus aktivieren
   currentMode = mode.Beam;
 
@@ -549,6 +568,75 @@ function startGame() {
 
   // Aufruf von Funktionen, die im zeitlichen Intervall immer wieder aufgerufen werden - in diesem Fall nur gameLoop()
   gameLoopHandle = setInterval(gameLoop, gameLoopIntervall);
+}
+
+/****************************************************************
+ * liest aus Cookie ob der Sound an oder ausgestellt werden soll
+ ****************************************************************/
+function readCookie() {
+  if (document.cookie) {
+    console.log("Lese Cookie");
+    let cookieString = decodeURIComponent(document.cookie);
+    let value = getValue("Sound", cookieString);
+    console.log("Setze Variable soundActive aus Cookie auf " + value);
+    // der Wert aus dem Cookie ist ein String und muss noch nach boolean gewandelt werden
+    soundActive = value.toLowerCase() == "true" ? true : false;
+  } else {
+    console.log("Kein Cookie vorhanden.");
+  }
+}
+
+/*************************************************************
+ * sucht im übergebenen <cookieString> nach den Namen <cname> 
+ * und gibt den Wert dafür zurück.
+ * 
+ * der <cookieString> ist eine Zeichenkette mit dem Aufbau
+ * "name1=wert1; name2=wert2; ... nameX=wertX" 
+ * 
+ * Wenn der Name nicht gefunden wird, wird ein leerer String 
+ * zurückgegeben 
+ * 
+ * @param {*} cname der zu suchende Name
+ * @param {*} cookieString die zu durchsuchende Zeichenkette 
+ * @returns der dem Namen zugeordnete Wert
+ *************************************************************/
+function getValue(cname, cookieString) {
+  console.log("cookieString: " + cookieString);
+  let value;
+  let name = cname + "=";
+  let ca = cookieString.split(";"); // aus cookieString Array mit name=wert Einträgen erzeugen
+  
+  // durch alle name=wert Einträge iterieren
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i]; // ein name=wert Eintrag
+    // mögliche Leerzeichen überspringen
+    while (c.charAt(0) == " ") {
+      c = c.substring(1);
+    }
+    // wenn der Name gefunden wurde den Wert extrahieren und zurückgeben
+    if (c.indexOf(name) == 0) {
+      value = c.substring(name.length, c.length);
+      return value;
+    }
+  }
+  return "";
+}
+
+/***********************************************************
+ * Cookie schreiben
+ * 
+ * @param {*} cname Name des Cookies
+ * @param {*} cvalue Wert des Cookies
+ * @param {*} exdays Gültigkeitsdauer des Cookies in Tagen
+ ***********************************************************/
+function writeCookie(cname, cvalue, exdays) {
+  console.log("cname: " + cname + " cvalue: " + cvalue + " exdays: " + exdays);
+  const d = new Date();
+  d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
+  let expires = "expires=" + d.toUTCString();
+  let cstring = cname + "=" + cvalue + "; " + expires + ";";
+  console.log("Schreibe Cookie: " + cstring);
+  document.cookie = cstring;
 }
 
 /*******************************/
@@ -564,7 +652,6 @@ function gameLoop() {
   }
 
   // Sound ein und ausschalten
-  // document.getElementById("speaker").innerHTML = ""
   if (KEY_S && !toogleSoundModeBlocked) {
     toogleSoundModeBlocked = true; // bis zum loslassen der S-Taste weiteren Aufruf blockieren
     if (soundActive) {
@@ -573,12 +660,11 @@ function gameLoop() {
       setTimeout(clearSoundField, 4000);
     } else {
       soundActive = true;
-      if (!soundInitialized) {
-        initializeSound();
-      }
       document.getElementById("speaker").innerHTML = soundOn;
       setTimeout(clearSoundField, 4000);
     }
+    // Sound-Modus in Cookie schreiben
+    writeCookie("Sound", soundActive, 365);
   }
 
   if (!KEY_S) {
@@ -888,6 +974,7 @@ function initializeSound() {
     autoplay: false,
     html5: true,
   });
+  console.log("Sound-Module wurde initialisiert.");
 }
 
 /*************************************
@@ -1197,7 +1284,7 @@ function moveSetCursorRight() {
 
     if (soundActive) {
       moveSetCursorSnd.play();
-    }  
+    }
   }
 }
 
@@ -1222,7 +1309,7 @@ function moveSetCursorLeft() {
 
     if (soundActive) {
       moveSetCursorSnd.play();
-    }  
+    }
   }
 }
 
@@ -1247,7 +1334,7 @@ function moveSetCursorUp() {
 
     if (soundActive) {
       moveSetCursorSnd.play();
-    }  
+    }
   }
 }
 
@@ -1272,7 +1359,7 @@ function moveSetCursorDown() {
 
     if (soundActive) {
       moveSetCursorSnd.play();
-    }  
+    }
   }
 }
 

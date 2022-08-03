@@ -18,7 +18,7 @@ The learning mode can be switched on and off by pressing the L key. In the learn
 the atoms set by the computer are displayed, allowing the player to become familiar with the course 
 of the beams.
 
-By default, sound effects are disabled. They can be switched on and off by pressing the S key.
+By default, sound effects are enabled. They can be switched on and off by pressing the S key.
 
 The cursor (the blue question mark) is moved with the 
 cursor keys left and right on the query fields to move around 
@@ -66,7 +66,7 @@ Durch Betätigen der L-Taste kann der Lern-Modus ein- und ausgeschaltet werden. 
 werden die vom Computer gesetzten Atome angezeigt, wodurch sich der Spieler mit dem Verlauf 
 der Strahlen vertraut machen kann.
 
-Standartmäßig sind Soundeffekte deaktiviert. Sie können durch Betätigen der S-Taste ein- und ausgeschaltet werden.
+Standartmäßig sind Soundeffekte aktiviert. Sie können durch Betätigen der S-Taste ein- und ausgeschaltet werden.
 
 Der Cursor (das blaue Fragezeichen) wird mit den Cursor-Tasten links 
 und rechts auf den Abfragefeldern um das Spielfeld bewegt.
