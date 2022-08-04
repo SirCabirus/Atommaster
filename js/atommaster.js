@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 2.8                            */
-/* 03.08.2022                             */
+/* Version 3.0                            */
+/* 04.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -222,7 +222,7 @@ let hits = 0;
 let missed = 0;
 let wrong = 0;
 
-// Flag ob Lern-Modus aktiv ist d.h. ob Atome angezeigt werden sollen
+// Flag ob Lern-Modus aktiv ist d.h. ob die zu suchenden Atome angezeigt werden sollen
 let learnModeActive = false;
 
 // Flags ob Spiel zu Ende ist.
@@ -543,9 +543,8 @@ document.onkeyup = function (e) {
 /*    aufgerufen                      */
 /**************************************/
 function startGame() {
-  // Cookie einlesen und Variablen setzen
-  readCookie();
-  console.log("soundActive: " + soundActive);
+  // Cookies einlesen und Variablen setzen
+  restoreGameParameter();
 
   // Sound-Modus kurz anzeigen
   if (soundActive) {
@@ -570,34 +569,70 @@ function startGame() {
   gameLoopHandle = setInterval(gameLoop, gameLoopIntervall);
 }
 
-/****************************************************************
- * liest aus Cookie ob der Sound an oder ausgestellt werden soll
- ****************************************************************/
-function readCookie() {
+/************************************************
+ * Stellt die Parameter
+ * 
+ * - soundActive - Sound-Effekte an oder aus
+ * - orbsB - Billardkugel-Modus an oder aus
+ * - atomsCnt - Anzahl der zu ermittelnden Atome
+ * 
+ * aus den Cookies, falls vorhanden, wieder her
+ ************************************************/
+function restoreGameParameter() {
   if (document.cookie) {
-    console.log("Lese Cookie");
+    let value;
+    console.log("Cookie(s) vorhanden.");
     let cookieString = decodeURIComponent(document.cookie);
-    let value = getValue("Sound", cookieString);
-    console.log("Setze Variable soundActive aus Cookie auf " + value);
-    // der Wert aus dem Cookie ist ein String und muss noch nach boolean gewandelt werden
-    soundActive = value.toLowerCase() == "true" ? true : false;
+
+    // Sound-Effekte
+    value = getValue("Sound", cookieString);
+    if (value != null) {
+      console.log("Setze Variable soundActive aus Cookie auf " + value);
+      // der Wert aus dem Cookie ist ein String und muss noch nach boolean gewandelt werden
+      soundActive = value.toLowerCase() == "true" ? true : false;
+    }
+
+    // Anzeigemodus für Strahlendurchgänge
+    value = getValue("orbsB", cookieString);
+    if (value != null) {
+      console.log("Setze Variable orbsB aus Cookie auf " + value);
+      // der Wert aus dem Cookie ist ein String und muss noch nach boolean gewandelt werden
+      orbsB = value.toLowerCase() == "true" ? true : false;
+      if (orbsB) {
+        orbs = orbs2;
+        randomOrbs = false;
+        document.getElementById("orbs").innerHTML = orbs2[0];  
+      } else {
+        orbs = orbs1;
+        randomOrbs = true;
+        document.getElementById("orbs").innerHTML = orbs1[0];  
+      }
+    }
+
+    // Anzahl der zu ermittelnden Atome
+    value = getValue("atomsCnt", cookieString);
+    if (value != null) {
+      console.log("Setze Variable atomsCnt aus Cookie auf " + value);
+      // der Wert aus dem Cookie ist ein String und muss noch zu einer Number gemacht werden
+      atomsCnt = parseInt(value);
+    }
+
   } else {
     console.log("Kein Cookie vorhanden.");
   }
 }
 
 /*************************************************************
- * sucht im übergebenen <cookieString> nach den Namen <cname> 
+ * sucht im übergebenen <cookieString> nach den Namen <cname>
  * und gibt den Wert dafür zurück.
- * 
+ *
  * der <cookieString> ist eine Zeichenkette mit dem Aufbau
- * "name1=wert1; name2=wert2; ... nameX=wertX" 
- * 
- * Wenn der Name nicht gefunden wird, wird ein leerer String 
- * zurückgegeben 
- * 
+ * "name1=wert1; name2=wert2; ... nameX=wertX"
+ *
+ * Wenn der Name nicht gefunden wird, wird null zurückgegeben
+ *
  * @param {*} cname der zu suchende Name
- * @param {*} cookieString die zu durchsuchende Zeichenkette 
+ * @param {*} cookieString die zu durchsuchende Zeichenkette
  * @returns der dem Namen zugeordnete Wert
  *************************************************************/
 function getValue(cname, cookieString) {
@@ -605,7 +640,7 @@ function getValue(cname, cookieString) {
   let value;
   let name = cname + "=";
   let ca = cookieString.split(";"); // aus cookieString Array mit name=wert Einträgen erzeugen
-  
+
   // durch alle name=wert Einträge iterieren
   for (let i = 0; i < ca.length; i++) {
     let c = ca[i]; // ein name=wert Eintrag
@@ -619,12 +654,12 @@ function getValue(cname, cookieString) {
       return value;
     }
   }
-  return "";
+  return null;
 }
 
 /***********************************************************
  * Cookie schreiben
- * 
+ *
  * @param {*} cname Name des Cookies
  * @param {*} cvalue Wert des Cookies
  * @param {*} exdays Gültigkeitsdauer des Cookies in Tagen
@@ -699,6 +734,7 @@ function gameLoop() {
         ++atomsCnt;
         setAtoms();
       }
+      writeCookie("atomsCnt", atomsCnt, 360);
     } else {
       userMessage(textAlert5);
     }
@@ -711,6 +747,7 @@ function gameLoop() {
         --atomsCnt;
         setAtoms();
       }
+      writeCookie("atomsCnt", atomsCnt, 360);
     } else {
       userMessage(textAlert5);
     }
@@ -888,7 +925,6 @@ function clearSoundField() {
  * Initialisiert die Sound-Effekte
  **********************************/
 function initializeSound() {
-  soundInitialized = true;
 
   // Soundeffekte initialisieren
   switch2SetSnd = new Howl({
@@ -974,7 +1010,9 @@ function initializeSound() {
     autoplay: false,
     html5: true,
   });
-  console.log("Sound-Module wurde initialisiert.");
+
+  soundInitialized = true;
+  console.log("Sound-Modul wurde initialisiert.");
 }
 
 /*************************************
@@ -996,6 +1034,7 @@ function toggleOrbs() {
       orbsB = true;
       document.getElementById("orbs").innerHTML = orbs2[0];
     }
+    writeCookie("orbsB", orbsB, 360);
   } else {
     // wenn Wechsel nicht mehr möglich Benutzer informieren
     userMessage(textAlert6);
@@ -1458,8 +1497,8 @@ function showAtoms() {
 
 /*******************************
  * Berechnet das Ergebnis
- * einer Eingabe und zeigt
- * es auf dem Spielbrett an
+ * einer Eingabe und zeigt es
+ * auf dem Experimentierfeld an
  *
  * @returns nothing
  *******************************/
