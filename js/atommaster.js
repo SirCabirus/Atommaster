@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 3.0                            */
-/* 04.08.2022                             */
+/* Version 3.1                            */
+/* 05.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -127,6 +127,9 @@ const coordinates2Beam = new Map([
 ]);
 
 /** Ende Variablen und Konstanten die abhängig von der Größe des Experimentierfeldes sind **/
+
+// Cookie aktiv - wenn ohne Webserver aufgerufen gibt es keine Cookies
+let cookieActive = false;
 
 // Array mit den Modi
 const mode = {
@@ -322,6 +325,8 @@ let placedAtoms = [
   '<img src="img/atomSetCount5.png">',
   '<img src="img/atomSetCount6.png">',
 ];
+
+let atomLearn = '<img src="img/atomLearn.png">'; // Lern-Modus
 
 let atomImage = '<img src="img/atom.png">'; // Grafik zur Anzeige von Atomen auf dem Experimentierfeld
 let orbA = '<img src="img/orbA.png">'; // Anzeige Absorbiert
@@ -571,15 +576,17 @@ function startGame() {
 
 /************************************************
  * Stellt die Parameter
- * 
+ *
  * - soundActive - Sound-Effekte an oder aus
  * - orbsB - Billardkugel-Modus an oder aus
  * - atomsCnt - Anzahl der zu ermittelnden Atome
- * 
+ *
  * aus den Cookies, falls vorhanden, wieder her
  ************************************************/
 function restoreGameParameter() {
   if (document.cookie) {
+    cookieActive = true;
+
     let value;
     console.log("Cookie(s) vorhanden.");
     let cookieString = decodeURIComponent(document.cookie);
@@ -601,11 +608,11 @@ function restoreGameParameter() {
       if (orbsB) {
         orbs = orbs2;
         randomOrbs = false;
-        document.getElementById("orbs").innerHTML = orbs2[0];  
+        document.getElementById("orbs").innerHTML = orbs2[0];
       } else {
         orbs = orbs1;
         randomOrbs = true;
-        document.getElementById("orbs").innerHTML = orbs1[0];  
+        document.getElementById("orbs").innerHTML = orbs1[0];
       }
     }
 
@@ -617,7 +624,20 @@ function restoreGameParameter() {
       atomsCnt = parseInt(value);
     }
 
+    // Lern-Modus
+    value = getValue("learnModeActive", cookieString);
+    if (value != null) {
+      // der Wert aus dem Cookie ist ein String und muss noch nach boolean gewandelt werden
+      learnModeActive = value.toLowerCase() == "true" ? true : false;
+      if (learnModeActive) {
+        document.getElementById("setcnt").innerHTML = atomLearn;
+        setAtoms();
+      } else {
+        document.getElementById("setcnt").innerHTML = "";
+      }
+    }
   } else {
+    cookieActive = false;
     console.log("Kein Cookie vorhanden.");
   }
 }
@@ -672,6 +692,11 @@ function writeCookie(cname, cvalue, exdays) {
   let cstring = cname + "=" + cvalue + "; " + expires + ";";
   console.log("Schreibe Cookie: " + cstring);
   document.cookie = cstring;
+  if (document.cookie) {
+    cookieActive = true;
+  } else {
+    console.log("Cookie kann im lokalen Modus nicht geschrieben werden!");
+  }
 }
 
 /*******************************/
@@ -709,17 +734,18 @@ function gameLoop() {
   // Lern-Modus ein und ausschalten
   if (KEY_L && !toogleLearnModeBlocked) {
     toogleLearnModeBlocked = true; // bis zum loslassen der L-Taste weiteren Aufruf blockieren
-    if (gameNotStarted) {
-      if (learnModeActive) {
-        learnModeActive = false;
-        setAtoms();
-      } else {
-        learnModeActive = true;
-        setAtoms();
-      }
+    if (learnModeActive) {
+      console.log("Schalte Lern-Modus aus!");
+      document.getElementById("setcnt").innerHTML = "";
+      learnModeActive = false;
     } else {
-      userMessage(textAlert7);
+      console.log("Schalte Lern-Modus ein!");
+      document.getElementById("setcnt").innerHTML = atomLearn;
+      learnModeActive = true;
     }
+    resetParameters();
+    setAtoms();
+    writeCookie("learnModeActive", learnModeActive, 360);
   }
 
   if (!KEY_L) {
@@ -913,6 +939,35 @@ function gameLoop() {
   document.getElementById("status").innerHTML = gamestatus;
 }
 
+/*****************************************
+ * löscht Parameter um einen Restart
+ * mit wiederhergestellten Parametern
+ * aus Cookies zu ermöglichen
+ *****************************************/
+function resetParameters() {
+  // alle angezeigten Abfrageergebnisse löschen
+  for (let i = 1; i <= numberOfRimIDs; i++) {
+    erg[i] = false;
+    document.getElementById(i).innerHTML = "";
+  }
+  rimUsed = 0; // Anzahl der benutzten Abragefelder
+  rimFree = true; // es gibt freie Abfragefelder
+
+  // alle benutzten Orbs wieder zur Verfügung stellen
+  for (let i = 0; i < numberOfOrbs; i++) {
+    orbsUsed[i] = false;
+  }
+  currOrb = 0;
+
+  // Abfrage-Cursor auf Anfangsposition
+  beamCursor = 1;
+  lastBeamCursor = beamCursor;
+  document.getElementById(beamCursor).innerHTML = questionMark;
+
+  // mögliche Anzeige des Abfrage-Cursor aus Hold löschen
+  document.getElementById("hold").innerHTML = "";
+}
+
 /*************************************
  * Löscht die Anzeige des Sound-Modus
  *************************************/
@@ -925,7 +980,6 @@ function clearSoundField() {
  * Initialisiert die Sound-Effekte
  **********************************/
 function initializeSound() {
-
   // Soundeffekte initialisieren
   switch2SetSnd = new Howl({
     src: ["snd/setMode.mp3"],
