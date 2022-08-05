@@ -964,7 +964,8 @@ function resetParameters() {
   lastBeamCursor = beamCursor;
   document.getElementById(beamCursor).innerHTML = questionMark;
 
-  // mögliche Anzeige des Abfrage-Cursor aus Hold löschen
+  // mögliches Hold löschen
+  hold = false;
   document.getElementById("hold").innerHTML = "";
 }
 
