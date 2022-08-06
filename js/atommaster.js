@@ -627,6 +627,7 @@ function restoreGameParameter() {
     // Lern-Modus
     value = getValue("learnModeActive", cookieString);
     if (value != null) {
+      console.log("Setze Variable learnModeActive aus Cookie auf " + value);
       // der Wert aus dem Cookie ist ein String und muss noch nach boolean gewandelt werden
       learnModeActive = value.toLowerCase() == "true" ? true : false;
       if (learnModeActive) {
