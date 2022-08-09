@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 3.1                            */
-/* 05.08.2022                             */
+/* Version 3.5                            */
+/* 09.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -30,6 +30,30 @@ let atomArray = [
 
 // Array für die gesetzten Atome
 let atomSetArray = [
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+];
+
+// Array für die Anzeige der Strahlenwege
+let atomBeamArray = [
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+  [0, 0, 0, 0, 0, 0, 0, 0],
+];
+
+// Array für die Strahlenwegkennungen zur Anzeige der Strahlenwege
+let atomBeamSetArray = [
   [0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0],
@@ -374,6 +398,25 @@ let orbs2 = [
 
 let orbs = orbs1; // Default ist Standard-Modus
 let orbsB = false; // Flag ob Billard-Modus aktiv
+
+// Beam-Kacheln
+let bx = '<img src="img/b-X.png">';
+let by = '<img src="img/b-Y.png">';
+let bxy = '<img src="img/b-XY.png">';
+
+let bsnwe = '<img src="img/BCorR-SE.png">';
+let bewns = '<img src="img/BCorR-SE.png">';
+let bwens = '<img src="img/BCorR-SW.png">';
+let bsnew = '<img src="img/BCorR-SW.png">';
+let bwesn = '<img src="img/bCorR-NW.png">';
+let bnsew = '<img src="img/bCorR-NW.png">';
+let bnswe = '<img src="img/bCorR-NE.png">';
+let bewsn = '<img src="img/bCorR-NE.png">';
+
+let brs2 = '<img src="img/bRef-SN.png">';
+let bre2 = '<img src="img/bRef-EW.png">';
+let brn2 = '<img src="img/bRef-NS.png">';
+let brw2 = '<img src="img/bRef-WE.png">';
 
 // drei Leerzeichen zur Trennung der Ausgabeinformationen in der Statuszeile
 const space = "\xa0\xa0\xa0";
@@ -1521,17 +1564,19 @@ function setAtoms() {
   }
 
   // Atome zufällig verteilen
-  for (let i = 1; i <= atomsCnt; i++) {
-    let sucess = false;
-    do {
-      let x = rand(1, lengthX + 1) - 1;
-      let y = rand(1, lengthY + 1) - 1;
-      if (atomArray[x][y] == 0) {
-        sucess = true;
-        atomArray[x][y] = 1;
-      }
-    } while (sucess == false);
-  }
+    // TODO
+    for (let i = 1; i <= atomsCnt; i++) {
+      let sucess = false;
+      do {
+        let x = rand(1, lengthX + 1) - 1;
+        let y = rand(1, lengthY + 1) - 1;
+        if (atomArray[x][y] == 0) {
+          sucess = true;
+          atomArray[x][y] = 1;
+        }
+      } while (sucess == false);
+    }
+
   if (learnModeActive) {
     showAtoms();
   }
@@ -1578,9 +1623,10 @@ function calculateBeam() {
     x: parseInt(beam[0]), // Anfangskoordinate X wird mit dem Fortschritt des Strahls abgeglichen
     y: parseInt(beam[1]), // Anfangskoordinate Y  wird mit dem Fortschritt des Strahls abgeglichen
     beamEntry: beamCursor, // Rim-ID des Abfrage-Cursor
-    beamExit: null, // TODO wird nicht gebraucht
+    beamTile: "", // Kürzel der anzuzeigenden Strahlen-Kachel
     points: 0, // Anzahl Punkte
     beamEnd: false, // Flag ob Strahlende erreicht ist
+    stepResult: "", // TODO
   };
 
   // in Abhängigkeit der Strahlrichtung wird die Anfangskoordinate angepasst, weil als erstes der Strahl in der angegebenen
@@ -1623,6 +1669,7 @@ function calculateBeam() {
         console.log("Unbekannter investigationMode " + investigationMode);
     }
     moveBeam(beamContainer);
+    setBeamTile(beamContainer);
   } while (beamContainer.beamEnd == false);
 
   ++trials;
@@ -1651,13 +1698,21 @@ function calculateBeam() {
   }
 }
 
-/*********************************************************
- * Bewegt den Untersuchungsstrahl
- * über das Experimentierfeld
+/******************************************************************
+ * Bewegt den Untersuchungsstrahl um ein Feld weiter.
+ *
+ * Der Untersuchungsstrahl (Hauptstrahl) wird rechts und links von
+ * einem Nebenstrahl flankiert, um Richtungsänderungen die durch
+ * ein Atom unmitelbar neben dem Hauptstrahl ausgelöst werden,
+ * aufzuspüren.
+ *
+ * Es sind nicht immer beide Nebenstrahlen vorhanden, wenn ein
+ * Nebenstrahl auf den Abfragefeldern mit den Rim-IDs liegt, ist
+ * er nicht gültig.
  *
  * @param {*} beamContainer enthält alle benötigten Daten
  * @returns beamContainer mit abgeglichenen Daten
- *********************************************************/
+ ******************************************************************/
 function moveBeam(beamContainer) {
   // Hauptstrahl MainBeam
   let fieldMB = {
@@ -1755,7 +1810,9 @@ function moveBeam(beamContainer) {
   }
   fieldMB.x = beamContainer.x;
   fieldMB.y = beamContainer.y;
-  beamContainer = checkFields(fieldMB, fieldLB, fieldRB, beamContainer);
+  if (!beamContainer.beamEnd) {
+    beamContainer = checkFields(fieldMB, fieldLB, fieldRB, beamContainer);
+  }
   return beamContainer;
 }
 
@@ -1778,6 +1835,7 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
       atomArray[fieldRB.x][fieldRB.y] == 1 // und rechter Nebenstrahl triff auf Atom
     ) {
       console.log("Reflektion LB + RB!");
+      beamContainer.stepResult = "R2";
       beamContainer.beamEnd = true;
       beamContainer.points = 1;
       erg[beamContainer.beamEntry] = true;
@@ -1800,21 +1858,25 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
         case "incX":
           beamContainer.x--;
           beamContainer.mode = "incY";
+          beamContainer.beamTile = "BWE-NS";
           console.log("checkfields: West-Ost -> Nord-Süd");
           break;
         case "decY":
           beamContainer.y++;
           beamContainer.mode = "incX";
+          beamContainer.beamTile = "BSN-WE";
           console.log("checkfields: Süd-Nord -> West-Ost");
           break;
         case "decX":
           beamContainer.x++;
           beamContainer.mode = "decY";
+          beamContainer.beamTile = "BEW-SN";
           console.log("checkfields: Ost-West -> Süd-Nord");
           break;
         case "incY":
           beamContainer.y--;
           beamContainer.mode = "decX";
+          beamContainer.beamTile = "BNS-EW";
           console.log("checkfields: Nord-Süd -> Ost-West");
           break;
         default:
@@ -1827,6 +1889,7 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
         beamContainer.y == beamContainer.ey
       ) {
         console.log("Reflektion LB!");
+        beamContainer.stepResult = "R";
         beamContainer.beamEnd = true;
         beamContainer.points = 1;
         erg[beamContainer.beamEntry] = true;
@@ -1836,6 +1899,7 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
           reflectionSnd.play();
         }
       }
+      // beamContainer.stepResult = "-";
       return beamContainer;
     }
   }
@@ -1850,21 +1914,25 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
         case "incX":
           beamContainer.x--;
           beamContainer.mode = "decY";
+          beamContainer.beamTile = "BWE-SN";
           console.log("checkfields: West-Ost -> Süd-Nord");
           break;
         case "decY":
           beamContainer.y++;
           beamContainer.mode = "decX";
+          beamContainer.beamTile = "BSN-EW";
           console.log("checkfields: Süd-Nord -> Ost-West");
           break;
         case "decX":
           beamContainer.x++;
           beamContainer.mode = "incY";
+          beamContainer.beamTile = "BEW-NS";
           console.log("checkfields: Ost-West -> Nord-Süd");
           break;
         case "incY":
           beamContainer.y--;
           beamContainer.mode = "incX";
+          beamContainer.beamTile = "BNS-WE";
           console.log("checkfields: Nord-Süd -> West-Ost");
           break;
         default:
@@ -1876,6 +1944,8 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
         beamContainer.x == beamContainer.ex &&
         beamContainer.y == beamContainer.ey
       ) {
+        console.log("Reflektion RB!");
+        beamContainer.stepResult = "R";
         beamContainer.beamEnd = true;
         beamContainer.points = 1;
         erg[beamContainer.beamEntry] = true;
@@ -1884,7 +1954,6 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
         if (soundActive) {
           reflectionSnd.play();
         }
-        console.log("Reflektion RB!");
       }
       return beamContainer;
     }
@@ -1901,9 +1970,12 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
     if (soundActive) {
       absorbtionSnd.play();
     }
+    beamContainer.stepResult = "A";
     return beamContainer;
   }
 
+  beamContainer.stepResult = "-";
+  beamContainer.beamTile = "";
   return beamContainer;
 }
 
@@ -1927,9 +1999,98 @@ function setBeamEnd(beamContainer) {
   setCursorAfterBeam(beamContainer.points);
   document.getElementById(beamEntry).innerHTML = beam;
   document.getElementById(beamEnd).innerHTML = beam;
+  beamContainer.stepResult = "X";
   console.log("Strahlende: Anfang: " + beamEntry + " Ende: " + beamEnd);
   if (soundActive) {
     beamEndSnd.play();
+  }
+}
+
+/***************************************************************
+ * Setzt für ein Feld die Strahlenkachel
+ *
+ * @param {*} beamContainer enthält alle nötigen Informationen
+ ***************************************************************/
+function setBeamTile(beamContainer) {
+  if (!learnModeActive) return;   // TODO
+
+  console.log(
+    "setBeamTile: stepResult '" +
+      beamContainer.stepResult +
+      "' beamTile: '" +
+      beamContainer.beamTile +
+      "' Field: " +
+      getID(beamContainer.x, beamContainer.y)
+  );
+
+  let stepResult = beamContainer.stepResult;
+  let beamTile = beamContainer.beamTile;
+  let mode = beamContainer.mode;
+  let field = getID(beamContainer.x, beamContainer.y);
+
+  if (stepResult != "X" && stepResult != "R" && !beamTile.includes("B")) {
+    // gerader Strahl
+    if (stepResult == "-") {
+      // Richtung bestimmen und Strahl ausgegeben
+      if (mode.includes("X")) {
+        document.getElementById(field).innerHTML = bx; // TODO
+      } else {
+        document.getElementById(field).innerHTML = by; // TODO
+      }
+    }
+  }
+  // abgelenkter Strahl
+  if (stepResult != "X" && stepResult != "R" && beamTile.includes("B")) {
+    switch (beamTile) {
+      case "BSN-WE":
+        document.getElementById(field).innerHTML = bsnwe; // TODO
+        break;
+      case "BEW-NS":
+        document.getElementById(field).innerHTML = bewns; // TODO
+        break;
+      case "BWE-NS":
+        document.getElementById(field).innerHTML = bwens; // TODO
+        break;
+      case "BSN-EW":
+        document.getElementById(field).innerHTML = bsnew; // TODO
+        break;
+      case "BWE-SN":
+        document.getElementById(field).innerHTML = bwesn; // TODO
+        break;
+      case "BNS-EW":
+        document.getElementById(field).innerHTML = bnsew; // TODO
+        break;
+      case "BNS-WE":
+        document.getElementById(field).innerHTML = bnswe; // TODO
+        break;
+      case "BEW-SN":
+        document.getElementById(field).innerHTML = bewsn; // TODO
+        break;
+      default:
+        console.log("Unbeanntes beamTile " + beamTile);
+        break;
+    }
+  }
+
+  // Reflektion durch zwei Atome
+  if (stepResult == "R2" && !field.includes("-") && !field.includes("8")) {
+    switch (mode) {
+      case "incY":
+        document.getElementById(field).innerHTML = brn2; // TODO
+        break;
+      case "decY":
+        document.getElementById(field).innerHTML = brs2; // TODO
+        break;
+      case "incX":
+        document.getElementById(field).innerHTML = bre2; // TODO
+        break;
+      case "decX":
+        document.getElementById(field).innerHTML = brw2; // TODO
+        break;
+      default:
+        console.log("Unbeannter mode " + mode);
+        break;
+    }
   }
 }
 
