@@ -4,7 +4,7 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 3.8                            */
+/* Version 3.9                            */
 /* 10.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
@@ -2050,9 +2050,17 @@ function setBeamTile(beamContainer) {
     if (stepResult == "-") {
       // Richtung bestimmen und Strahl ausgegeben
       if (mode.includes("X")) {
-        atomBeamArray[x][y] = bx;
+        if (atomBeamArray[x][y] == 0) {
+          atomBeamArray[x][y] = bx;
+        } else {
+          atomBeamArray[x][y] = bxy;
+        }
       } else {
-        atomBeamArray[x][y] = by;
+        if (atomBeamArray[x][y] == 0) {
+          atomBeamArray[x][y] = by;
+        } else {
+          atomBeamArray[x][y] = bxy;
+        }
       }
     }
   }
