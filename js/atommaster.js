@@ -4,7 +4,7 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 4.0                            */
+/* Version 5.0                            */
 /* 10.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
@@ -171,6 +171,8 @@ let toggleOrbsBlocked = false;
 let toogleLearnModeBlocked = false;
 // ist der Wechsel Lautsprecher an und aus blockiert
 let toogleSoundModeBlocked = false;
+// ist der Wechsel zwischen X-Ray an und aus blockiert
+let toogleXRayModeBlocked = false;
 
 // Flag Sound on oder off - der Zustand wird in einem Cookie gespeichert
 let soundActive = true;
@@ -243,6 +245,9 @@ let learnModeActive = false;
 // Flags ob Spiel zu Ende ist.
 let gameEndShow = false; // Spielergebnis anzeigen und dann Spiel (gameLoop()) beeenden
 let gameEnd = false; // Spiel beenden - wird gesetzt nachdem Spielergebnis angezeigt wurde
+
+// Flag ob xRay angezeigt wird
+let xRayActive = false;
 
 // Statuszeile
 let gamestatus;
@@ -438,6 +443,7 @@ let KEY_B = false; // die B-Taste
 let KEY_E = false; // die E-Taste
 let KEY_L = false; // die L-Taste
 let KEY_S = false; // die S-Taste
+let KEY_X = false; // die X-Taste
 let KEY_SHIFT = false; // die Shift-Taste
 
 /**********************************/
@@ -508,6 +514,11 @@ document.onkeydown = function (e) {
   if (e.key == "s" || e.key == "S") {
     KEY_S = true;
   }
+
+  // X wurde gedrückt
+  if (e.key == "x" || e.key == "X") {
+    KEY_X = true;
+  }
 };
 
 /**********************************/
@@ -570,6 +581,11 @@ document.onkeyup = function (e) {
   // S wurde losgelassen
   if (e.key == "s" || e.key == "S") {
     KEY_S = false;
+  }
+
+  // X wurde losgelassen
+  if (e.key == "x" || e.key == "X") {
+    KEY_X = false;
   }
 };
 
@@ -742,6 +758,10 @@ function gameLoop() {
   if (gameEnd) {
     // gameLoop beenden
     clearInterval(gameLoopHandle);
+    soundActive = false;
+    xRayHandle = setInterval(toogleXRay, 100);
+
+    // toogleXRay();
     return;
   }
 
@@ -983,8 +1003,6 @@ function resetParameters() {
   for (let x = 0; x <= lengthX; x++) {
     for (let y = 0; y <= lengthY; y++) {
       atomBeamArray[x][y] = 0;
-      // auch aus Anzeige löschen, falls showAtoms() aktiv
-      // document.getElementById("f" + x + y).innerHTML = "";
     }
   }
 
@@ -1154,6 +1172,7 @@ function clearKeyboardBuffer() {
   KEY_E = false;
   KEY_L = false;
   KEY_S = false;
+  KEY_X = false;
 }
 
 /************************************
@@ -2213,4 +2232,33 @@ function calculateResult() {
 
   // Flag setzen dass das Spielende erreicht ist, aber noch einmal angezeigt werden soll
   gameEndShow = true;
+}
+
+/**********************************************************************
+ * Zeigt im Wechsel nach der Auswertung die Strahlenwege an oder nicht 
+ **********************************************************************/
+function toogleXRay() {
+  if (KEY_X && !toogleXRayModeBlocked) {
+    toogleXRayModeBlocked = true;
+    if (xRayActive) {
+      xRayActive = false;
+
+      for (let x = 0; x <= lengthX; x++) {
+        for (let y = 0; y <= lengthY; y++) {
+          if (atomBeamArray[x][y] != 0) {
+            document.getElementById(getID(x, y)).innerHTML = "";
+          }
+        }
+      }
+
+      calculateResult();
+    } else {
+      xRayActive = true;
+      showBeams();
+    }
+  }
+
+  if (!KEY_X) {
+    toogleXRayModeBlocked = false;
+  }
 }
