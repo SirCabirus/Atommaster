@@ -4,7 +4,7 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 3.7                            */
+/* Version 3.8                            */
 /* 10.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
@@ -42,18 +42,6 @@ let atomSetArray = [
 
 // Array für die Anzeige der Strahlenwege
 let atomBeamArray = [
-  [0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0],
-];
-
-// Array für die Strahlenwegkennungen zur Anzeige der Strahlenwege
-let atomBeamSetArray = [
   [0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0],
   [0, 0, 0, 0, 0, 0, 0, 0],
@@ -989,6 +977,15 @@ function gameLoop() {
  * aus Cookies zu ermöglichen
  *****************************************/
 function resetParameters() {
+  // Array mit Strahlenanzeige löschen
+  for (let x = 0; x <= lengthX; x++) {
+    for (let y = 0; y <= lengthY; y++) {
+      atomBeamArray[x][y] = 0;
+      // auch aus Anzeige löschen, falls showAtoms() aktiv
+      // document.getElementById("f" + x + y).innerHTML = "";
+    }
+  }
+
   // alle angezeigten Abfrageergebnisse löschen
   for (let i = 1; i <= numberOfRimIDs; i++) {
     erg[i] = false;
@@ -1564,18 +1561,17 @@ function setAtoms() {
   }
 
   // Atome zufällig verteilen
-    // TODO
-    for (let i = 1; i <= atomsCnt; i++) {
-      let sucess = false;
-      do {
-        let x = rand(1, lengthX + 1) - 1;
-        let y = rand(1, lengthY + 1) - 1;
-        if (atomArray[x][y] == 0) {
-          sucess = true;
-          atomArray[x][y] = 1;
-        }
-      } while (sucess == false);
-    }
+  for (let i = 1; i <= atomsCnt; i++) {
+    let sucess = false;
+    do {
+      let x = rand(1, lengthX + 1) - 1;
+      let y = rand(1, lengthY + 1) - 1;
+      if (atomArray[x][y] == 0) {
+        sucess = true;
+        atomArray[x][y] = 1;
+      }
+    } while (sucess == false);
+  }
 
   if (learnModeActive) {
     showAtoms();
@@ -1626,7 +1622,7 @@ function calculateBeam() {
     beamTile: "", // Kürzel der anzuzeigenden Strahlen-Kachel
     points: 0, // Anzahl Punkte
     beamEnd: false, // Flag ob Strahlende erreicht ist
-    stepResult: "", // TODO
+    stepResult: "", // Kennung für diesen einzelnen Schritt
   };
 
   // in Abhängigkeit der Strahlrichtung wird die Anfangskoordinate angepasst, weil als erstes der Strahl in der angegebenen
@@ -1670,6 +1666,9 @@ function calculateBeam() {
     }
     moveBeam(beamContainer);
     setBeamTile(beamContainer);
+    if (learnModeActive) {
+      showBeams();
+    }
   } while (beamContainer.beamEnd == false);
 
   ++trials;
@@ -1808,8 +1807,12 @@ function moveBeam(beamContainer) {
       setBeamEnd(beamContainer);
     }
   }
+
+  // Hauptstrahl initialisieren
   fieldMB.x = beamContainer.x;
   fieldMB.y = beamContainer.y;
+
+  // die drei Felder vom Hauptstrahl und der zwei Nebenstrahlen auswerten
   if (!beamContainer.beamEnd) {
     beamContainer = checkFields(fieldMB, fieldLB, fieldRB, beamContainer);
   }
@@ -2006,14 +2009,26 @@ function setBeamEnd(beamContainer) {
   }
 }
 
+function showBeams() {
+  // Array mit Strahlenanzeige löschen
+  let beamTile;
+  // let fiD;
+  for (let x = 0; x <= lengthX; x++) {
+    for (let y = 0; y <= lengthY; y++) {
+      beamTile = atomBeamArray[x][y];
+      if (beamTile != 0) {
+        document.getElementById(getID(x, y)).innerHTML = beamTile;
+      }
+    }
+  }
+}
+
 /***************************************************************
  * Setzt für ein Feld die Strahlenkachel
  *
  * @param {*} beamContainer enthält alle nötigen Informationen
  ***************************************************************/
 function setBeamTile(beamContainer) {
-  if (!learnModeActive) return;   // TODO
-
   console.log(
     "setBeamTile: stepResult '" +
       beamContainer.stepResult +
@@ -2027,15 +2042,17 @@ function setBeamTile(beamContainer) {
   let beamTile = beamContainer.beamTile;
   let mode = beamContainer.mode;
   let field = getID(beamContainer.x, beamContainer.y);
+  let x = beamContainer.x;
+  let y = beamContainer.y;
 
   if (stepResult != "X" && stepResult != "R" && !beamTile.includes("B")) {
     // gerader Strahl
     if (stepResult == "-") {
       // Richtung bestimmen und Strahl ausgegeben
       if (mode.includes("X")) {
-        document.getElementById(field).innerHTML = bx; // TODO
+        atomBeamArray[x][y] = bx;
       } else {
-        document.getElementById(field).innerHTML = by; // TODO
+        atomBeamArray[x][y] = by;
       }
     }
   }
@@ -2043,31 +2060,32 @@ function setBeamTile(beamContainer) {
   if (stepResult != "X" && stepResult != "R" && beamTile.includes("B")) {
     switch (beamTile) {
       case "BSN-WE":
-        document.getElementById(field).innerHTML = bsnwe; // TODO
+        atomBeamArray[x][y] = bsnwe;
         break;
       case "BEW-NS":
-        document.getElementById(field).innerHTML = bewns; // TODO
+        atomBeamArray[x][y] = bewns;
         break;
       case "BWE-NS":
-        document.getElementById(field).innerHTML = bwens; // TODO
+        atomBeamArray[x][y] = bwens;
         break;
       case "BSN-EW":
-        document.getElementById(field).innerHTML = bsnew; // TODO
+        atomBeamArray[x][y] = bwens;
         break;
       case "BWE-SN":
-        document.getElementById(field).innerHTML = bwesn; // TODO
+        atomBeamArray[x][y] = bwesn;
         break;
       case "BNS-EW":
-        document.getElementById(field).innerHTML = bnsew; // TODO
+        atomBeamArray[x][y] = bnsew;
         break;
       case "BNS-WE":
-        document.getElementById(field).innerHTML = bnswe; // TODO
+        atomBeamArray[x][y] = bnswe;
         break;
       case "BEW-SN":
-        document.getElementById(field).innerHTML = bewsn; // TODO
+        atomBeamArray[x][y] = bewsn;
         break;
       default:
         console.log("Unbeanntes beamTile " + beamTile);
+        atomBeamArray[x][y] = bewns;
         break;
     }
   }
@@ -2076,16 +2094,16 @@ function setBeamTile(beamContainer) {
   if (stepResult == "R2" && !field.includes("-") && !field.includes("8")) {
     switch (mode) {
       case "incY":
-        document.getElementById(field).innerHTML = brn2; // TODO
+        atomBeamArray[x][y] = brn2;
         break;
       case "decY":
-        document.getElementById(field).innerHTML = brs2; // TODO
+        atomBeamArray[x][y] = brs2;
         break;
       case "incX":
-        document.getElementById(field).innerHTML = bre2; // TODO
+        atomBeamArray[x][y] = bre2;
         break;
       case "decX":
-        document.getElementById(field).innerHTML = brw2; // TODO
+        atomBeamArray[x][y] = brw2;
         break;
       default:
         console.log("Unbeannter mode " + mode);
