@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 3.5                            */
-/* 09.08.2022                             */
+/* Version 3.7                            */
+/* 10.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
