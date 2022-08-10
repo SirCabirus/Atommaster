@@ -4,7 +4,7 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 3.9                            */
+/* Version 4.0                            */
 /* 10.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
@@ -405,6 +405,8 @@ let brs2 = '<img src="img/bRef-SN.png">';
 let bre2 = '<img src="img/bRef-EW.png">';
 let brn2 = '<img src="img/bRef-NS.png">';
 let brw2 = '<img src="img/bRef-WE.png">';
+let brns2 = '<img src="img/bRef-NSSN.png">';
+let brwe2 = '<img src="img/bRef-WEEW.png">';
 
 // drei Leerzeichen zur Trennung der Ausgabeinformationen in der Statuszeile
 const space = "\xa0\xa0\xa0";
@@ -2009,10 +2011,12 @@ function setBeamEnd(beamContainer) {
   }
 }
 
+/*****************************
+ * Zeigt die Strahlenwege an
+ *****************************/
 function showBeams() {
-  // Array mit Strahlenanzeige löschen
   let beamTile;
-  // let fiD;
+
   for (let x = 0; x <= lengthX; x++) {
     for (let y = 0; y <= lengthY; y++) {
       beamTile = atomBeamArray[x][y];
@@ -2050,20 +2054,25 @@ function setBeamTile(beamContainer) {
     if (stepResult == "-") {
       // Richtung bestimmen und Strahl ausgegeben
       if (mode.includes("X")) {
+        // Strahl in X-Richtung
+        // Abfrage ob der Strahlenweg einen anderen kreuzt
         if (atomBeamArray[x][y] == 0) {
           atomBeamArray[x][y] = bx;
         } else {
-          atomBeamArray[x][y] = bxy;
+          atomBeamArray[x][y] = bxy; // Kreuzung anzeigen
         }
       } else {
+        // Strahl in Y-Richtung
+        // Abfrage ob der Strahlenweg einen anderen kreuzt
         if (atomBeamArray[x][y] == 0) {
           atomBeamArray[x][y] = by;
         } else {
-          atomBeamArray[x][y] = bxy;
+          atomBeamArray[x][y] = bxy; // Kreuzung anzeigen
         }
       }
     }
   }
+
   // abgelenkter Strahl
   if (stepResult != "X" && stepResult != "R" && beamTile.includes("B")) {
     switch (beamTile) {
@@ -2102,16 +2111,32 @@ function setBeamTile(beamContainer) {
   if (stepResult == "R2" && !field.includes("-") && !field.includes("8")) {
     switch (mode) {
       case "incY":
-        atomBeamArray[x][y] = brn2;
+        if (atomBeamArray[x][y] == 0) {
+          atomBeamArray[x][y] = brn2;
+        } else {
+          atomBeamArray[x][y] = brns2;
+        }
         break;
       case "decY":
-        atomBeamArray[x][y] = brs2;
+        if (atomBeamArray[x][y] == 0) {
+          atomBeamArray[x][y] = brs2;
+        } else {
+          atomBeamArray[x][y] = brns2;
+        }
         break;
       case "incX":
-        atomBeamArray[x][y] = bre2;
+        if (atomBeamArray[x][y] == 0) {
+          atomBeamArray[x][y] = bre2;
+        } else {
+          atomBeamArray[x][y] = brwe2;
+        }
         break;
       case "decX":
-        atomBeamArray[x][y] = brw2;
+        if (atomBeamArray[x][y] == 0) {
+          atomBeamArray[x][y] = brw2;
+        } else {
+          atomBeamArray[x][y] = brwe2;
+        }
         break;
       default:
         console.log("Unbeannter mode " + mode);
