@@ -755,13 +755,16 @@ function writeCookie(cname, cvalue, exdays) {
 /* wird                        */
 /*******************************/
 function gameLoop() {
+  // ist nach der Anzeige der Auswertung wirksam
   if (gameEnd) {
     // gameLoop beenden
     clearInterval(gameLoopHandle);
-    soundActive = false;
+    
+    // Funktion zur Anzeige der Strahlenwerte nach der Auswertung scharf schalten
+    clearKeyboardBuffer();
+    soundActive = false; // damit nach dem Wechsel von XRay zurück zur Auswertung die Melodie nicht nochmal spielt
     xRayHandle = setInterval(toogleXRay, 100);
 
-    // toogleXRay();
     return;
   }
 
@@ -2241,6 +2244,7 @@ function toogleXRay() {
   if (KEY_X && !toogleXRayModeBlocked) {
     toogleXRayModeBlocked = true;
     if (xRayActive) {
+      console.log("XRay deaktiviert.")
       xRayActive = false;
 
       for (let x = 0; x <= lengthX; x++) {
@@ -2253,6 +2257,7 @@ function toogleXRay() {
 
       calculateResult();
     } else {
+      console.log("XRay aktiviert.")
       xRayActive = true;
       showBeams();
     }

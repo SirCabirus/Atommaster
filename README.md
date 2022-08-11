@@ -46,6 +46,8 @@ The E key is used to evaluate the game. The game field shows
 - which atoms have been set incorrectly
 - which atoms have not been detected.
 
+The X key can be used to display and switch off the beam path after an evaluation.
+
 Press F5 to restart the game.
 
 Atommaster can be played via [this link](https://sircabirus.github.io/Atommaster/).
@@ -92,6 +94,8 @@ und nochmals die Eingabe-Taste betätigt.
 - welche Atome ermittelt wurden
 - welche Atome falsch gesetzt wurden 
 - welche Atome nicht endeckt wurden
+
+Über die X-Taste kann nach einer Auswertung der Strahlenverlauf angezeigt und wieder abgechaltet werden.
 
 Über F5 wird das Spiel neu gestartet.
 
