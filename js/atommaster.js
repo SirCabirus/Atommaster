@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 5.0                            */
-/* 10.08.2022                             */
+/* Version 5.1                            */
+/* 13.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -629,6 +629,7 @@ function startGame() {
  * - soundActive - Sound-Effekte an oder aus
  * - orbsB - Billardkugel-Modus an oder aus
  * - atomsCnt - Anzahl der zu ermittelnden Atome
+ * - learnModeActive - Lern-Modus an oder aus
  *
  * aus den Cookies, falls vorhanden, wieder her
  ************************************************/
@@ -1644,7 +1645,7 @@ function calculateBeam() {
     y: parseInt(beam[1]), // Anfangskoordinate Y  wird mit dem Fortschritt des Strahls abgeglichen
     beamEntry: beamCursor, // Rim-ID des Abfrage-Cursor
     beamTile: "", // Kürzel der anzuzeigenden Strahlen-Kachel
-    points: 0, // Anzahl Punkte
+    points: 0, // Anzahl der Punkte für diesen Abfragestrahl
     beamEnd: false, // Flag ob Strahlende erreicht ist
     stepResult: "", // Kennung für diesen einzelnen Schritt
   };
@@ -1668,9 +1669,11 @@ function calculateBeam() {
       console.log("Unbekannter investigationMode " + investigationMode);
   }
 
+  // Anfangskoordinaten speichern - diese werden nicht mehr geändert
   beamContainer.ex = beamContainer.x;
   beamContainer.ey = beamContainer.y;
 
+  // Logausgabe der Strahlenrichtung 
   do {
     switch (beamContainer.mode) {
       case "incX":
@@ -1688,18 +1691,21 @@ function calculateBeam() {
       default:
         console.log("Unbekannter investigationMode " + investigationMode);
     }
-    moveBeam(beamContainer);
-    setBeamTile(beamContainer);
-    if (learnModeActive) {
-      showBeams();
-    }
-  } while (beamContainer.beamEnd == false);
+    moveBeam(beamContainer); // den Strahl solange um ein Feld vorwärts bewegen
+    setBeamTile(beamContainer); // und dabei den Strahlenverlauf im Array speichern
+  } while (beamContainer.beamEnd == false); // bis das Strahlende erreicht ist
 
+  // wenn der Lern-Modus aktiv ist den Strahlenverlauf anzeigen
+  if (learnModeActive) { 
+    showBeams();
+  }
+
+  // Anzahl der Versuche erhöhen
   ++trials;
-  points = beamContainer.points;
-
+  
   // Punktestand abgleichen
   // score = score + points;
+  points = beamContainer.points;
   score = score + beamContainer.points;
 
   // Anzahl genutzter Randfelder erhöhen
@@ -1713,7 +1719,7 @@ function calculateBeam() {
   }
 
   // Wenn noch Platz frei ist Cursor bis zum Loslassen der Return-Taste blockieren
-  // um unbeabsichtigtes mehrfaches Abfeuern zu verhindern
+  // um unbeabsichtigtes mehrfaches Abfeuern des Untersuchungsstrahls zu verhindern
   if (rimFree) {
     beamCursorBlocked = true;
     questionMark = questionMarks[1];
@@ -1758,6 +1764,7 @@ function moveBeam(beamContainer) {
     valid: false, // Nebenstrahl ist nur innerhalb des Experimentierfeldes gültig
   };
 
+  // Nebenstrahlen in Abhängigkeit der Richtung initialisieren
   if (beamContainer.mode == "incX") {
     console.log("moveBeam() incX läuft.");
     if (beamContainer.x < lengthX) {
@@ -1836,7 +1843,7 @@ function moveBeam(beamContainer) {
   fieldMB.x = beamContainer.x;
   fieldMB.y = beamContainer.y;
 
-  // die drei Felder vom Hauptstrahl und der zwei Nebenstrahlen auswerten
+  // die drei aktuellen Felder vom Hauptstrahl und der zwei Nebenstrahlen auswerten
   if (!beamContainer.beamEnd) {
     beamContainer = checkFields(fieldMB, fieldLB, fieldRB, beamContainer);
   }
@@ -1874,10 +1881,10 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
       return beamContainer;
     }
   }
-  // Überprüfen auf Richtungsänderung
   // Linker Nebenstrahl
   if (fieldLB.valid) {
-    if (
+  // Überprüfen auf Richtungsänderung
+  if (
       atomArray[fieldLB.x][fieldLB.y] == 1 &&
       atomArray[fieldMB.x][fieldMB.y] == 0
     ) {
@@ -1926,14 +1933,14 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
           reflectionSnd.play();
         }
       }
-      // beamContainer.stepResult = "-";
       return beamContainer;
     }
   }
 
   // Rechter Nebenstrahl
   if (fieldRB.valid) {
-    if (
+  // Überprüfen auf Richtungsänderung
+  if (
       atomArray[fieldRB.x][fieldRB.y] == 1 &&
       atomArray[fieldMB.x][fieldMB.y] == 0
     ) {
@@ -2001,6 +2008,8 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
     return beamContainer;
   }
 
+  // wenn es keine Reflektion und keine Absorption gab geht der Strahl weiter
+  // dies gilt auch nach einer Richtungsänderung
   beamContainer.stepResult = "-";
   beamContainer.beamTile = "";
   return beamContainer;
