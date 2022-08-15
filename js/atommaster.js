@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 5.2                            */
-/* 14.08.2022                             */
+/* Version 5.3                            */
+/* 15.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -327,7 +327,8 @@ let questionMarkCurrent = 0;
 
 // Grafiken für das Experimentierfeld im Set-Modus
 let setAtomMark = '<img src="img/atom.png">'; // gesetztes Atom
-let atomQuestionMark = '<img src="img/atomQuestionMark.png">'; // Cursor im Set-Modus
+let atomQuestionMark = '<img src="img/atomQuestionMark.png">'; // Cursor im Set-Modus für ermitteltes Atom
+let atomExclamationMark = '<img src="img/atomExclamationMark.png">'; // Cursor im Set-Modus für Atom Manuel Mode
 let atomRight = '<img src="img/atomRight.png">'; // richtig ermitteltes Atom
 let atomWrong = '<img src="img/atomWrong.png">'; // falsch ermitteltes Atom
 let atomMissed = '<img src="img/atom.png">'; // nicht ermittelte Atom
@@ -854,7 +855,7 @@ function gameLoop() {
         moveBeamCursorRight();
         break;
       case mode.Set:
-        moveSetCursorRight();
+        moveSetCursorRight(atomSetArray);
         break;
       default:
         console.log("KEY_RIGHT down: Modus currentMode nicht definiert.");
@@ -868,7 +869,7 @@ function gameLoop() {
         moveBeamCursorLeft();
         break;
       case mode.Set:
-        moveSetCursorLeft();
+        moveSetCursorLeft(atomSetArray);
         break;
       default:
         console.log("KEY_LEFT down: Modus nicht definiert.");
@@ -879,10 +880,9 @@ function gameLoop() {
   if (KEY_UP) {
     switch (currentMode) {
       case mode.Beam:
-        // moveBeamCursorLeft();
         break;
       case mode.Set:
-        moveSetCursorUp();
+        moveSetCursorUp(atomSetArray);
         break;
       default:
         console.log("KEY_UP down: Modus nicht definiert.");
@@ -893,10 +893,9 @@ function gameLoop() {
   if (KEY_DOWN) {
     switch (currentMode) {
       case mode.Beam:
-        // moveBeamCursorLeft();
         break;
       case mode.Set:
-        moveSetCursorDown();
+        moveSetCursorDown(atomSetArray);
         break;
       default:
         console.log("KEY_DOWN down: Modus nicht definiert.");
@@ -916,7 +915,7 @@ function gameLoop() {
         // Atom auf dem Experimentierfeld setzen oder löschen
         if (!setAtomCursorBlocked) {
           setAtomCursorBlocked = true; // bis zum loslassen der Enter-Taste weiteren Aufruf blockieren
-          toggleSetAtom();
+          toggleSetAtom(atomSetArray);
         }
         break;
       default:
@@ -1423,18 +1422,19 @@ function getRimID(x, y, direction) {
   return rimID;
 }
 
-/********************************
- * Setzt den Set-Cursor eine
- * Position nach rechts
- ********************************/
-function moveSetCursorRight() {
+/**********************************************************
+ * Setzt den Set-Cursor eine Position nach rechts
+ * 
+ * @param {*} atomArray Array indem der Cursor bewegt wird 
+ **********************************************************/
+function moveSetCursorRight(atomArray) {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
   let fid;
   if (setCursorX < lengthX) {
     setCursorX++;
     fid = getLastSetID();
-    if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
+    if (atomArray[setCursorLastX][setCursorLastY] == 0) {
       document.getElementById(fid).innerHTML = "";
     } else {
       document.getElementById(fid).innerHTML = setAtomMark;
@@ -1448,18 +1448,19 @@ function moveSetCursorRight() {
   }
 }
 
-/********************************
- * Setzt den Set-Cursor eine
- * Position nach links
- ********************************/
-function moveSetCursorLeft() {
+/**********************************************************
+ * Setzt den Set-Cursor eine Position nach links
+ * 
+ * @param {*} atomArray Array indem der Cursor bewegt wird 
+ **********************************************************/
+function moveSetCursorLeft(atomArray) {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
   let fid;
   if (setCursorX > 0) {
     setCursorX--;
     fid = getLastSetID();
-    if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
+    if (atomArray[setCursorLastX][setCursorLastY] == 0) {
       document.getElementById(fid).innerHTML = "";
     } else {
       document.getElementById(fid).innerHTML = setAtomMark;
@@ -1473,18 +1474,19 @@ function moveSetCursorLeft() {
   }
 }
 
-/********************************
- * Setzt den Set-Cursor eine
- * Position nach oben
- ********************************/
-function moveSetCursorUp() {
+/**********************************************************
+ * Setzt den Set-Cursor eine Position nach oben
+ * 
+ * @param {*} atomArray Array indem der Cursor bewegt wird 
+ **********************************************************/
+function moveSetCursorUp(atomArray) {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
   let fid;
   if (setCursorY > 0) {
     setCursorY--;
     fid = getLastSetID();
-    if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
+    if (atomArray[setCursorLastX][setCursorLastY] == 0) {
       document.getElementById(fid).innerHTML = "";
     } else {
       document.getElementById(fid).innerHTML = setAtomMark;
@@ -1498,18 +1500,19 @@ function moveSetCursorUp() {
   }
 }
 
-/********************************
- * Setzt den Set-Cursor eine
- * Position nach unten
- ********************************/
-function moveSetCursorDown() {
+/**********************************************************
+ * Setzt den Set-Cursor eine Position nach unten
+ * 
+ * @param {*} atomArray Array indem der Cursor bewegt wird 
+ **********************************************************/
+function moveSetCursorDown(atomArray) {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
   let fid;
   if (setCursorY < lengthY) {
     setCursorY++;
     fid = getLastSetID();
-    if (atomSetArray[setCursorLastX][setCursorLastY] == 0) {
+    if (atomArray[setCursorLastX][setCursorLastY] == 0) {
       document.getElementById(fid).innerHTML = "";
     } else {
       document.getElementById(fid).innerHTML = setAtomMark;
@@ -1523,33 +1526,34 @@ function moveSetCursorDown() {
   }
 }
 
-/********************************
- * Setzt und löscht im Wechsel
- * ein Atom an der Position des
- * Set-Cursors
- ********************************/
-function toggleSetAtom() {
+/***********************************************************************
+ * Setzt und löscht im Wechsel ein Atom an der Position des Set-Cursors
+ * 
+ * @param {*} atomArray Array indem das Atom gesetzt oder gelöscht wird 
+ ***********************************************************************/
+function toggleSetAtom(atomArray) {
   let fid = getSetID();
 
-  if (atomSetArray[setCursorX][setCursorY] == 0) {
-    setAtomProbeField();
+  if (atomArray[setCursorX][setCursorY] == 0) {
+    setAtomProbeField(atomArray);
     document.getElementById(fid).innerHTML = setAtomMark;
   } else {
-    deleteAtomProbeField();
+    deleteAtomProbeField(atomArray);
     document.getElementById(fid).innerHTML = atomQuestionMark;
   }
 }
 
-/********************************
- * Setzt ein Atom an der
- * Position des Set-Cursors
- ********************************/
-function setAtomProbeField() {
+/***************************************************************
+ * Setzt ein Atom an der Position des Set-Cursors
+ * 
+ * @param {*} atomArray Array indem indem das Atom gesetzt wird  
+ ***************************************************************/
+function setAtomProbeField(atomArray) {
   if (setAtomsCnt < atomsCnt) {
     if (soundActive) {
       setAtomSnd.play();
     }
-    atomSetArray[setCursorX][setCursorY] = 1;
+    atomArray[setCursorX][setCursorY] = 1;
     ++setAtomsCnt;
     document.getElementById("setcnt").innerHTML = placedAtoms[setAtomsCnt];
   } else {
@@ -1557,12 +1561,13 @@ function setAtomProbeField() {
   }
 }
 
-/********************************
- * Löscht ein Atom an der
- * Position des Set-Cursors
- ********************************/
-function deleteAtomProbeField() {
-  atomSetArray[setCursorX][setCursorY] = 0;
+/****************************************************************
+ * Löscht ein Atom an der Position des Set-Cursors
+ * 
+ * @param {*} atomArray Array indem indem das Atom gelöscht wird   
+ ****************************************************************/
+function deleteAtomProbeField(atomArray) {
+  atomArray[setCursorX][setCursorY] = 0;
   --setAtomsCnt;
   document.getElementById("setcnt").innerHTML = placedAtoms[setAtomsCnt];
   if (soundActive) {
