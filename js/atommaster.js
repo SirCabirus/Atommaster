@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 5.3                            */
-/* 15.08.2022                             */
+/* Version 5.5                            */
+/* 18.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -174,6 +174,11 @@ let toogleSoundModeBlocked = false;
 // ist der Wechsel zwischen X-Ray an und aus blockiert
 let toogleXRayModeBlocked = false;
 
+// Flag ob Atome manuell setzen aktiv ist
+let manualSetAtoms = false;
+// Flag ob Atome manuell gesetzt wurden
+let manualModusActive = false;
+
 // Flag Sound on oder off - der Zustand wird in einem Cookie gespeichert
 let soundActive = true;
 
@@ -262,6 +267,8 @@ let textAlert6;
 let textAlert7;
 let textAlert8;
 let textAlert9;
+let textAlert10;
+let textAlert11;
 let textAtoms;
 let textTrials;
 let textPoints;
@@ -281,6 +288,8 @@ if (navigator.language.indexOf("de") > -1) {
   textAlert7 = deAlert7;
   textAlert8 = deAlert8;
   textAlert9 = deAlert9;
+  textAlert10 = deAlert10;
+  textAlert11 = deAlert11;
   textAtoms = deAtoms;
   textTrials = deTrials;
   textPoints = dePoints;
@@ -298,6 +307,8 @@ if (navigator.language.indexOf("de") > -1) {
   textAlert7 = engAlert7;
   textAlert8 = engAlert8;
   textAlert9 = engAlert9;
+  textAlert10 = engAlert10;
+  textAlert11 = engAlert11;
   textAtoms = engAtoms;
   textTrials = engTrials;
   textPoints = engPoints;
@@ -617,9 +628,6 @@ function startGame() {
   // der Cursor wird durch die Funktionen moveBeamCursorRight() und moveBeamCursorLeft() versetzt
   document.getElementById(beamCursor).innerHTML = questionMark;
 
-  // Atome zufällig auf dem Experimentierfeld verteilen
-  setAtoms();
-
   // Aufruf von Funktionen, die im zeitlichen Intervall immer wieder aufgerufen werden - in diesem Fall nur gameLoop()
   gameLoopHandle = setInterval(gameLoop, gameLoopIntervall);
 }
@@ -761,7 +769,7 @@ function gameLoop() {
   if (gameEnd) {
     // gameLoop beenden
     clearInterval(gameLoopHandle);
-    
+
     // Funktion zur Anzeige der Strahlenwerte nach der Auswertung scharf schalten
     clearKeyboardBuffer();
     soundActive = false; // damit nach dem Wechsel von XRay zurück zur Auswertung die Melodie nicht nochmal spielt
@@ -791,20 +799,27 @@ function gameLoop() {
   }
 
   // Lern-Modus ein und ausschalten
-  if (KEY_L && !toogleLearnModeBlocked) {
-    toogleLearnModeBlocked = true; // bis zum loslassen der L-Taste weiteren Aufruf blockieren
-    if (learnModeActive) {
-      console.log("Schalte Lern-Modus aus!");
-      document.getElementById("setcnt").innerHTML = "";
-      learnModeActive = false;
+  if (KEY_L) {
+    // der Lern-Modus kann nur aktiviert werden wenn der Manual-Modus nicht aktiv ist
+    if (!manualSetAtoms) {
+      if (KEY_L && !toogleLearnModeBlocked) {
+        toogleLearnModeBlocked = true; // bis zum loslassen der L-Taste weiteren Aufruf blockieren
+        if (learnModeActive) {
+          console.log("Schalte Lern-Modus aus!");
+          document.getElementById("setcnt").innerHTML = "";
+          learnModeActive = false;
+        } else {
+          console.log("Schalte Lern-Modus ein!");
+          document.getElementById("setcnt").innerHTML = atomLearn;
+          learnModeActive = true;
+        }
+        resetParameters();
+        setAtoms();
+        writeCookie("learnModeActive", learnModeActive, 360);
+      }
     } else {
-      console.log("Schalte Lern-Modus ein!");
-      document.getElementById("setcnt").innerHTML = atomLearn;
-      learnModeActive = true;
+      userMessage(textAlert10);
     }
-    resetParameters();
-    setAtoms();
-    writeCookie("learnModeActive", learnModeActive, 360);
   }
 
   if (!KEY_L) {
@@ -855,7 +870,11 @@ function gameLoop() {
         moveBeamCursorRight();
         break;
       case mode.Set:
-        moveSetCursorRight(atomSetArray);
+        if (gameNotStarted) {
+          moveSetCursorRight(atomArray, atomExclamationMark);
+        } else {
+          moveSetCursorRight(atomSetArray, atomQuestionMark);
+        }
         break;
       default:
         console.log("KEY_RIGHT down: Modus currentMode nicht definiert.");
@@ -869,7 +888,11 @@ function gameLoop() {
         moveBeamCursorLeft();
         break;
       case mode.Set:
-        moveSetCursorLeft(atomSetArray);
+        if (gameNotStarted) {
+          moveSetCursorLeft(atomArray, atomExclamationMark);
+        } else {
+          moveSetCursorLeft(atomSetArray, atomQuestionMark);
+        }
         break;
       default:
         console.log("KEY_LEFT down: Modus nicht definiert.");
@@ -882,7 +905,11 @@ function gameLoop() {
       case mode.Beam:
         break;
       case mode.Set:
-        moveSetCursorUp(atomSetArray);
+        if (gameNotStarted) {
+          moveSetCursorUp(atomArray, atomExclamationMark);
+        } else {
+          moveSetCursorUp(atomSetArray, atomQuestionMark);
+        }
         break;
       default:
         console.log("KEY_UP down: Modus nicht definiert.");
@@ -895,7 +922,11 @@ function gameLoop() {
       case mode.Beam:
         break;
       case mode.Set:
-        moveSetCursorDown(atomSetArray);
+        if (gameNotStarted) {
+          moveSetCursorDown(atomArray, atomExclamationMark);
+        } else {
+          moveSetCursorDown(atomSetArray, atomQuestionMark);
+        }
         break;
       default:
         console.log("KEY_DOWN down: Modus nicht definiert.");
@@ -906,16 +937,26 @@ function gameLoop() {
   if (KEY_ENTER) {
     switch (currentMode) {
       case mode.Beam:
-        // Strahlengang berechnen
-        gameNotStarted = false;
-        document.getElementById("orbs").innerHTML = "";
-        calculateBeam();
+        // falls manuell keine Atome gesetzt wurden muss der Computer welche setzen
+        if (gameNotStarted && !manualModusActive && !learnModeActive) {
+          // dieser Code-Block wird nur einmal durchlaufen da danach das Spiel gestartet ist - > gameNotStarted = false
+          // manualSetAtoms = false;
+          setAtoms();
+          console.log("Die zu ratenden Atome wurden vom Computer gesetzt.");
+        }
+        gameNotStarted = false; // das Spiel ist gestartet
+        document.getElementById("orbs").innerHTML = ""; // Anzeige Orb-Modus löschen
+        calculateBeam(); // Strahlenweg berechnen
         break;
       case mode.Set:
         // Atom auf dem Experimentierfeld setzen oder löschen
         if (!setAtomCursorBlocked) {
           setAtomCursorBlocked = true; // bis zum loslassen der Enter-Taste weiteren Aufruf blockieren
-          toggleSetAtom(atomSetArray);
+          if (gameNotStarted) {
+            toggleSetAtom(atomArray, atomExclamationMark);
+          } else {
+            toggleSetAtom(atomSetArray, atomQuestionMark);
+          }
         }
         break;
       default:
@@ -1031,6 +1072,10 @@ function resetParameters() {
   // mögliches Hold löschen
   hold = false;
   document.getElementById("hold").innerHTML = "";
+
+  // Manuell-Modus löschen
+  manualModusActive = false;
+  manualSetAtoms = false;
 }
 
 /*************************************
@@ -1178,43 +1223,141 @@ function clearKeyboardBuffer() {
   KEY_X = false;
 }
 
-/************************************
- * Umschalten der verschiedenen Modi
- ************************************/
+/****************************************************
+ * Umschalten zwischen Beam-Modus und Set-Modus
+ *
+ * Im Beam-Modus wird der Cursor mit [->] und [<-]
+ * um das Spielfeld bewegt und über [Eingabe] ein
+ * Untersuchungsstrahl abgefeuert.
+ *
+ * Im Set-Modus werden entweder manual zu ratende
+ * Atome (nur solange noch kein Strahl abgefeuert
+ * wurde ) oder gefundene Atome auf das
+ * Experimentierfeld gesetzt.In diesem Modus wird
+ * der Cursor über alle vier Cursor-Tasten im
+ * Experimentierfeld bewegt und über [Eingabe] ein
+ * Atom gesetzt oder gelöscht.
+ *
+ * Die Funktion switchMode() ändert den Modus von
+ * Beam zu Set und zurück. Dabei wird die Variable
+ * currentMode gesetzt, die beim Drücken der
+ * Cursor-Tasten - Auswertung in der Funktion
+ * gameloop - darüber entscheidet, welche
+ * Cursor-Funktionen (Beam oder Set) aufgerufen
+ * werden.
+ *
+ * Außerdem wird hier festgelegt, in welcher Farbe
+ * der Beam-Cursor (aktiv oder inaktiv) oder welcher
+ * Set-Cursor (Fragezeichen oder Ausrufezeichen
+ * in Abhängigkeit von Atome raten oder verteilen)
+ * im Experimentierfeld angezeigt wird.
+ ****************************************************/
 function switchMode() {
   switch (currentMode) {
     case mode.Beam:
+      // wir ind im Modus Beam und wechseln zum Modus Set
+      // wenn wir nicht im Lern-Modus sind, schalten wir den Cursor zum Setzen der Atome auf das Experimentierfeld
       if (!learnModeActive) {
-        currentMode = mode.Set;
-        document.getElementById(getSetID()).innerHTML = atomQuestionMark;
+        currentMode = mode.Set; // wir sind jetzt im Set-Modus und merken uns das
+
+        // wenn noch kein Strahl abgefeuert wurde
+        if (gameNotStarted) {
+          // wir sind im ManualSet-Modus der nur verlassen wird wenn alle oder kein Atom manuell gesetzt sind
+          if (!manualSetAtoms) {
+            deleteAtoms(); // Atome löschen falls der Manual-Modus wiederholt aufgerufen wird
+            manualModusActive = false; // Manual-Modus zurücksetzen falls dieser wiederholt aufgerufen wird
+            manualSetAtoms = true; // Status merken
+            console.log("ManualSet-Modus aktiviert.");
+          } else {
+            console.log("ManualSet-Modus ist bereits aktiv.");
+          }
+          // Set-Cursor mit Ausrufezeichen für Manual-Modus im Experimentierfeld anzeigen
+          document.getElementById(getSetID()).innerHTML = atomExclamationMark;
+        } else {
+          // wenn ein Strahl abgefeuert wurde
+          // Set-Cursor mit Fragezeichen für das Setzen ermittelter Atome anzeigen
+          document.getElementById(getSetID()).innerHTML = atomQuestionMark;
+        }
+
+        // solange wir im Set-Modus sind orangefarbenen Beam-Cursor anzeigen als Zeichen dass er inaktiv ist
         questionMark = questionMarks[1];
+        // wenn der Beam-Cursor nicht im Hold ist
         if (!hold) {
           if (soundActive) {
+            // Sound für das Umschalten auf den Set-Modus abspielen
             switch2SetSnd.play();
           }
+          // inaktiven Beam-Cursor auf der Randfläche auf aktueller Position anzeigen
           document.getElementById(beamCursor).innerHTML = questionMark;
         } else {
+          // inaktiven Beam-Cursor im Hold anzeigen
           document.getElementById("hold").innerHTML = questionMark;
         }
       } else {
+        // im Lern-Modus können keine Atome gesetzt werden
         userMessage(textAlert9);
       }
       break;
+
     case mode.Set:
-      currentMode = mode.Beam;
-      if (atomSetArray[setCursorX][setCursorY] == 0) {
-        document.getElementById(getSetID()).innerHTML = "";
+      // wir sind im Modus Set und wechseln zum Modus Beam
+      // falls zu ratende Atom gesetzt wurden (manualSetAtoms) dürfen wir nicht wechseln solange nicht alle Atome gesetzt wurden
+      if (atomsCnt > setAtomsCnt && setAtomsCnt > 0 && manualSetAtoms) {
+        userMessage(textAlert7);
       } else {
-        document.getElementById(getSetID()).innerHTML = atomImage;
-      }
-      questionMark = questionMarks[0];
-      if (!hold) {
-        if (soundActive) {
-          switch2BeamSnd.play();
+        currentMode = mode.Beam; // wir sind jetzt im Beam-Modus und merken uns das
+
+        // wurden die Atome manuell gesetzt oder müssen sie noch vom Computer gesetzt werden
+        if (manualSetAtoms && atomsCnt == setAtomsCnt && !manualModusActive) {
+          // dieser Code-Block wird nur einmal durchlaufen, da manualModusActive als Bedingung auf true gesetzt wird
+          // die Atome wurden manuell gesetzt
+          manualModusActive = true;
+          // Anzahl der gesetzen Atome zurücksetzen
+          setAtomsCnt = 0;
+          // Set-Cursor zurücksetzen damit es keinen Anhaltspunkt auf das zuletzt gesetzte Atom gibt
+          setCursorX = 0;
+          setCursorY = 0;
+          setCursorLastX = 0;
+          setCursorLastY = 0;
+          // Nachricht an User dass alle Atome gesetzt wurden und die Anzeige der Atome jetzt gelöscht wird
+          userMessage(textAlert11);
+          hideAtoms();
+          console.log("Die zu ratenden Atome wurden manuell gesetzt.");
         }
-        document.getElementById(beamCursor).innerHTML = questionMark;
-      } else {
-        document.getElementById("hold").innerHTML = questionMark;
+
+        manualSetAtoms = false; // es sind entweder alle oder kein Atom gesetzt, darum muss das Flag auf false gesetzt werden
+
+        if (gameNotStarted) {
+          // wenn atomArray unter Cursor leer ist, Cursor-Bild entfernen
+          if (atomArray[setCursorX][setCursorY] == 0) {
+            document.getElementById(getSetID()).innerHTML = "";
+          }
+          // Anzeige der womöglich im ManualModus gesetzten Atome löschen
+          document.getElementById("setcnt").innerHTML = "";
+        } else {
+          // wenn atomSetArray unter Cursor leer ist, Cursor-Bild entfernen
+          if (atomSetArray[setCursorX][setCursorY] == 0) {
+            document.getElementById(getSetID()).innerHTML = "";
+          } else {
+            // sonst Set-Cursor durch Atom ersetzen
+            document.getElementById(getSetID()).innerHTML = atomImage;
+          }
+        }
+
+        // blauen Beam-Cursor anzeigen als Zeichen dass er wieder aktiv ist
+        questionMark = questionMarks[0];
+        // wenn der Beam-Cursor nicht im Hold ist
+        if (!hold) {
+          if (soundActive) {
+            // Sound für das Umschalten auf den Beam-Modus abspielen
+            switch2BeamSnd.play();
+          }
+          // aktiven Beam-Cursor auf der Randfläche auf aktueller Position anzeigen
+          document.getElementById(beamCursor).innerHTML = questionMark;
+        } else {
+          // aktiven Beam-Cursor im Hold anzeigen
+          document.getElementById("hold").innerHTML = questionMark;
+        }
       }
       break;
     default:
@@ -1424,10 +1567,11 @@ function getRimID(x, y, direction) {
 
 /**********************************************************
  * Setzt den Set-Cursor eine Position nach rechts
- * 
- * @param {*} atomArray Array indem der Cursor bewegt wird 
+ *
+ * @param {*} atomArray Array indem der Cursor bewegt wird
+ * @param {*} setCursor Grafik des Cursors im Set-Modus
  **********************************************************/
-function moveSetCursorRight(atomArray) {
+function moveSetCursorRight(atomArray, setCursor) {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
   let fid;
@@ -1440,7 +1584,7 @@ function moveSetCursorRight(atomArray) {
       document.getElementById(fid).innerHTML = setAtomMark;
     }
     fid = getSetID();
-    document.getElementById(fid).innerHTML = atomQuestionMark;
+    document.getElementById(fid).innerHTML = setCursor;
 
     if (soundActive) {
       moveSetCursorSnd.play();
@@ -1450,10 +1594,11 @@ function moveSetCursorRight(atomArray) {
 
 /**********************************************************
  * Setzt den Set-Cursor eine Position nach links
- * 
- * @param {*} atomArray Array indem der Cursor bewegt wird 
+ *
+ * @param {*} atomArray Array indem der Cursor bewegt wird
+ * @param {*} setCursor Grafik des Cursors im Set-Modus
  **********************************************************/
-function moveSetCursorLeft(atomArray) {
+function moveSetCursorLeft(atomArray, setCursor) {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
   let fid;
@@ -1466,7 +1611,7 @@ function moveSetCursorLeft(atomArray) {
       document.getElementById(fid).innerHTML = setAtomMark;
     }
     fid = getSetID();
-    document.getElementById(fid).innerHTML = atomQuestionMark;
+    document.getElementById(fid).innerHTML = setCursor;
 
     if (soundActive) {
       moveSetCursorSnd.play();
@@ -1476,10 +1621,11 @@ function moveSetCursorLeft(atomArray) {
 
 /**********************************************************
  * Setzt den Set-Cursor eine Position nach oben
- * 
- * @param {*} atomArray Array indem der Cursor bewegt wird 
+ *
+ * @param {*} atomArray Array indem der Cursor bewegt wird
+ * @param {*} setCursor Grafik des Cursors im Set-Modus
  **********************************************************/
-function moveSetCursorUp(atomArray) {
+function moveSetCursorUp(atomArray, setCursor) {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
   let fid;
@@ -1492,7 +1638,7 @@ function moveSetCursorUp(atomArray) {
       document.getElementById(fid).innerHTML = setAtomMark;
     }
     fid = getSetID();
-    document.getElementById(fid).innerHTML = atomQuestionMark;
+    document.getElementById(fid).innerHTML = setCursor;
 
     if (soundActive) {
       moveSetCursorSnd.play();
@@ -1502,10 +1648,11 @@ function moveSetCursorUp(atomArray) {
 
 /**********************************************************
  * Setzt den Set-Cursor eine Position nach unten
- * 
- * @param {*} atomArray Array indem der Cursor bewegt wird 
+ *
+ * @param {*} atomArray Array indem der Cursor bewegt wird
+ * @param {*} setCursor Grafik des Cursors im Set-Modus
  **********************************************************/
-function moveSetCursorDown(atomArray) {
+function moveSetCursorDown(atomArray, setCursor) {
   setCursorLastX = setCursorX;
   setCursorLastY = setCursorY;
   let fid;
@@ -1518,7 +1665,7 @@ function moveSetCursorDown(atomArray) {
       document.getElementById(fid).innerHTML = setAtomMark;
     }
     fid = getSetID();
-    document.getElementById(fid).innerHTML = atomQuestionMark;
+    document.getElementById(fid).innerHTML = setCursor;
 
     if (soundActive) {
       moveSetCursorSnd.play();
@@ -1528,10 +1675,11 @@ function moveSetCursorDown(atomArray) {
 
 /***********************************************************************
  * Setzt und löscht im Wechsel ein Atom an der Position des Set-Cursors
- * 
- * @param {*} atomArray Array indem das Atom gesetzt oder gelöscht wird 
+ *
+ * @param {*} atomArray Array indem das Atom gesetzt oder gelöscht wird
+ * @param {*} setCursor Grafik des Cursors im Set-Modus
  ***********************************************************************/
-function toggleSetAtom(atomArray) {
+function toggleSetAtom(atomArray, setCursor) {
   let fid = getSetID();
 
   if (atomArray[setCursorX][setCursorY] == 0) {
@@ -1539,14 +1687,14 @@ function toggleSetAtom(atomArray) {
     document.getElementById(fid).innerHTML = setAtomMark;
   } else {
     deleteAtomProbeField(atomArray);
-    document.getElementById(fid).innerHTML = atomQuestionMark;
+    document.getElementById(fid).innerHTML = setCursor;
   }
 }
 
 /***************************************************************
  * Setzt ein Atom an der Position des Set-Cursors
- * 
- * @param {*} atomArray Array indem indem das Atom gesetzt wird  
+ *
+ * @param {*} atomArray Array indem indem das Atom gesetzt wird
  ***************************************************************/
 function setAtomProbeField(atomArray) {
   if (setAtomsCnt < atomsCnt) {
@@ -1563,8 +1711,8 @@ function setAtomProbeField(atomArray) {
 
 /****************************************************************
  * Löscht ein Atom an der Position des Set-Cursors
- * 
- * @param {*} atomArray Array indem indem das Atom gelöscht wird   
+ *
+ * @param {*} atomArray Array indem indem das Atom gelöscht wird
  ****************************************************************/
 function deleteAtomProbeField(atomArray) {
   atomArray[setCursorX][setCursorY] = 0;
@@ -1582,13 +1730,7 @@ function deleteAtomProbeField(atomArray) {
  **************************************/
 function setAtoms() {
   // bereits gesetzte Atome löschen
-  for (let x = 0; x <= lengthX; x++) {
-    for (let y = 0; y <= lengthY; y++) {
-      atomArray[x][y] = 0;
-      // auch aus Anzeige löschen, falls showAtoms() aktiv
-      document.getElementById("f" + x + y).innerHTML = "";
-    }
-  }
+  deleteAtoms();
 
   // Atome zufällig verteilen
   for (let i = 1; i <= atomsCnt; i++) {
@@ -1605,6 +1747,33 @@ function setAtoms() {
 
   if (learnModeActive) {
     showAtoms();
+  }
+}
+
+/**************************************
+ * Löscht alle Atome aus dem atomArray
+ * und auch deren Anzeige auf dem
+ * Experimentierfeld
+ **************************************/
+function deleteAtoms() {
+  for (let x = 0; x <= lengthX; x++) {
+    for (let y = 0; y <= lengthY; y++) {
+      atomArray[x][y] = 0;
+      // auch aus Anzeige löschen
+      document.getElementById("f" + x + y).innerHTML = "";
+    }
+  }
+}
+
+/************************************************
+ * Löscht alle Atome aus der Anzeige
+ * die Atome im atomArray bleiben dabei erhalten
+ ************************************************/
+function hideAtoms() {
+  for (let x = 0; x <= lengthX; x++) {
+    for (let y = 0; y <= lengthY; y++) {
+      document.getElementById("f" + x + y).innerHTML = "";
+    }
   }
 }
 
@@ -1678,7 +1847,7 @@ function calculateBeam() {
   beamContainer.ex = beamContainer.x;
   beamContainer.ey = beamContainer.y;
 
-  // Logausgabe der Strahlenrichtung 
+  // Logausgabe der Strahlenrichtung
   do {
     switch (beamContainer.mode) {
       case "incX":
@@ -1701,13 +1870,13 @@ function calculateBeam() {
   } while (beamContainer.beamEnd == false); // bis das Strahlende erreicht ist
 
   // wenn der Lern-Modus aktiv ist den Strahlenverlauf anzeigen
-  if (learnModeActive) { 
+  if (learnModeActive) {
     showBeams();
   }
 
   // Anzahl der Versuche erhöhen
   ++trials;
-  
+
   // Punktestand abgleichen
   // score = score + points;
   points = beamContainer.points;
@@ -1888,8 +2057,8 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
   }
   // Linker Nebenstrahl
   if (fieldLB.valid) {
-  // Überprüfen auf Richtungsänderung
-  if (
+    // Überprüfen auf Richtungsänderung
+    if (
       atomArray[fieldLB.x][fieldLB.y] == 1 &&
       atomArray[fieldMB.x][fieldMB.y] == 0
     ) {
@@ -1944,8 +2113,8 @@ function checkFields(fieldMB, fieldLB, fieldRB, beamContainer) {
 
   // Rechter Nebenstrahl
   if (fieldRB.valid) {
-  // Überprüfen auf Richtungsänderung
-  if (
+    // Überprüfen auf Richtungsänderung
+    if (
       atomArray[fieldRB.x][fieldRB.y] == 1 &&
       atomArray[fieldMB.x][fieldMB.y] == 0
     ) {
@@ -2252,13 +2421,13 @@ function calculateResult() {
 }
 
 /**********************************************************************
- * Zeigt im Wechsel nach der Auswertung die Strahlenwege an oder nicht 
+ * Zeigt im Wechsel nach der Auswertung die Strahlenwege an oder nicht
  **********************************************************************/
 function toogleXRay() {
   if (KEY_X && !toogleXRayModeBlocked) {
     toogleXRayModeBlocked = true;
     if (xRayActive) {
-      console.log("XRay deaktiviert.")
+      console.log("XRay deaktiviert.");
       xRayActive = false;
 
       for (let x = 0; x <= lengthX; x++) {
@@ -2271,7 +2440,7 @@ function toogleXRay() {
 
       calculateResult();
     } else {
-      console.log("XRay aktiviert.")
+      console.log("XRay aktiviert.");
       xRayActive = true;
       showBeams();
     }

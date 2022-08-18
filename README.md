@@ -41,6 +41,9 @@ An atom is placed on the game field by pressing the Enter key.
 A set atom is deleted by placing the cursor on it and pressing 
 the Enter key again.
 
+If the CTRL key is pressed before a beam is fired, the atoms can be set manually.
+If all atoms have been set manually, they will be hidden when the CTRL key is pressed again.
+
 The E key is used to evaluate the game. The game field shows 
 - which atoms have been detected 
 - which atoms have been set incorrectly
@@ -89,6 +92,9 @@ Ein Atom wird durch die Eingabe-Taste auf das Spielfeld gesetzt.
 
 Ein gesetztes Atom wird gelöscht indem man den Cursor darauf plaziert 
 und nochmals die Eingabe-Taste betätigt.
+
+Falls die STRG-Taste betätigt wird bevor ein Strahl abgefeuert wurde, können die Atome manuell gesetzt werden.
+Wenn alle Atome manuell gesetzt wurden werden diese beim erneuten Betätigen der STRG-Taste versteckt.
 
 Über die E-Taste erfolgt die Auswertung des Spiels. Auf dem Spielfeld wird angezeigt, 
 - welche Atome ermittelt wurden
