@@ -4,8 +4,8 @@
 /* Umsetzung des Brettspiels ORDO         */
 /* welches auch als Black Box bekannt ist */
 /*                                        */
-/* Version 5.5                            */
-/* 18.08.2022                             */
+/* Version 6.0                            */
+/* 20.08.2022                             */
 /*                                        */
 /* Frank Wolter                           */
 /*                                        */
@@ -443,6 +443,7 @@ let moveSetCursorSnd;
 let setAtomSnd;
 let deleteAtomSnd;
 let alertSnd;
+let manualSetCompletedSnd;
 
 // Variablen für die Tastatureingaben
 let KEY_RIGHT = false; // die 'Pfeil nach rechts' Cursor-Taste
@@ -767,31 +768,12 @@ function writeCookie(cname, cvalue, exdays) {
 function gameLoop() {
   // ist nach der Anzeige der Auswertung wirksam
   if (gameEnd) {
-    // gameLoop beenden
-    clearInterval(gameLoopHandle);
-
-    // Funktion zur Anzeige der Strahlenwerte nach der Auswertung scharf schalten
-    clearKeyboardBuffer();
-    soundActive = false; // damit nach dem Wechsel von XRay zurück zur Auswertung die Melodie nicht nochmal spielt
-    xRayHandle = setInterval(toogleXRay, 100);
-
-    return;
+    treatGameEnd();
   }
 
   // Sound ein und ausschalten
   if (KEY_S && !toogleSoundModeBlocked) {
-    toogleSoundModeBlocked = true; // bis zum loslassen der S-Taste weiteren Aufruf blockieren
-    if (soundActive) {
-      soundActive = false;
-      document.getElementById("speaker").innerHTML = soundOff;
-      setTimeout(clearSoundField, 4000);
-    } else {
-      soundActive = true;
-      document.getElementById("speaker").innerHTML = soundOn;
-      setTimeout(clearSoundField, 4000);
-    }
-    // Sound-Modus in Cookie schreiben
-    writeCookie("Sound", soundActive, 365);
+    treatSound();
   }
 
   if (!KEY_S) {
@@ -800,26 +782,7 @@ function gameLoop() {
 
   // Lern-Modus ein und ausschalten
   if (KEY_L) {
-    // der Lern-Modus kann nur aktiviert werden wenn der Manual-Modus nicht aktiv ist
-    if (!manualSetAtoms) {
-      if (KEY_L && !toogleLearnModeBlocked) {
-        toogleLearnModeBlocked = true; // bis zum loslassen der L-Taste weiteren Aufruf blockieren
-        if (learnModeActive) {
-          console.log("Schalte Lern-Modus aus!");
-          document.getElementById("setcnt").innerHTML = "";
-          learnModeActive = false;
-        } else {
-          console.log("Schalte Lern-Modus ein!");
-          document.getElementById("setcnt").innerHTML = atomLearn;
-          learnModeActive = true;
-        }
-        resetParameters();
-        setAtoms();
-        writeCookie("learnModeActive", learnModeActive, 360);
-      }
-    } else {
-      userMessage(textAlert10);
-    }
+    treatLearnMode();
   }
 
   if (!KEY_L) {
@@ -829,28 +792,12 @@ function gameLoop() {
   /** Anzahl Atome verändern **/
   // Anzahl Atome erhöhen
   if (KEY_SHIFT && KEY_UP) {
-    if (gameNotStarted) {
-      if (atomsCnt < atomsMaxCnt) {
-        ++atomsCnt;
-        setAtoms();
-      }
-      writeCookie("atomsCnt", atomsCnt, 360);
-    } else {
-      userMessage(textAlert5);
-    }
+    treatAtomInc();
   }
 
   // Anzahl Atome verringern
   if (KEY_SHIFT && KEY_DOWN) {
-    if (gameNotStarted) {
-      if (atomsCnt > atomsMinCnt) {
-        --atomsCnt;
-        setAtoms();
-      }
-      writeCookie("atomsCnt", atomsCnt, 360);
-    } else {
-      userMessage(textAlert5);
-    }
+    treatAtomDec();
   }
 
   // Anzeige der Orbs zwischen Standard- und Billardkugel-Modus hin und her schalten
@@ -865,122 +812,32 @@ function gameLoop() {
 
   // Cursor nach rechts bewegen
   if (KEY_RIGHT) {
-    switch (currentMode) {
-      case mode.Beam:
-        moveBeamCursorRight();
-        break;
-      case mode.Set:
-        if (gameNotStarted) {
-          moveSetCursorRight(atomArray, atomExclamationMark);
-        } else {
-          moveSetCursorRight(atomSetArray, atomQuestionMark);
-        }
-        break;
-      default:
-        console.log("KEY_RIGHT down: Modus currentMode nicht definiert.");
-    }
+    treatCursorRight();
   }
 
   // Cursor nach links bewegen
   if (KEY_LEFT) {
-    switch (currentMode) {
-      case mode.Beam:
-        moveBeamCursorLeft();
-        break;
-      case mode.Set:
-        if (gameNotStarted) {
-          moveSetCursorLeft(atomArray, atomExclamationMark);
-        } else {
-          moveSetCursorLeft(atomSetArray, atomQuestionMark);
-        }
-        break;
-      default:
-        console.log("KEY_LEFT down: Modus nicht definiert.");
-    }
+    treatCursorLeft();
   }
 
   // Cursor nach oben bewegen
   if (KEY_UP) {
-    switch (currentMode) {
-      case mode.Beam:
-        break;
-      case mode.Set:
-        if (gameNotStarted) {
-          moveSetCursorUp(atomArray, atomExclamationMark);
-        } else {
-          moveSetCursorUp(atomSetArray, atomQuestionMark);
-        }
-        break;
-      default:
-        console.log("KEY_UP down: Modus nicht definiert.");
-    }
+    treatCursorUp();
   }
 
   // Cursor nach unten bewegen
   if (KEY_DOWN) {
-    switch (currentMode) {
-      case mode.Beam:
-        break;
-      case mode.Set:
-        if (gameNotStarted) {
-          moveSetCursorDown(atomArray, atomExclamationMark);
-        } else {
-          moveSetCursorDown(atomSetArray, atomQuestionMark);
-        }
-        break;
-      default:
-        console.log("KEY_DOWN down: Modus nicht definiert.");
-    }
+    treatCursorDown();
   }
 
   // Eingabe auswerten
   if (KEY_ENTER) {
-    switch (currentMode) {
-      case mode.Beam:
-        // falls manuell keine Atome gesetzt wurden muss der Computer welche setzen
-        if (gameNotStarted && !manualModusActive && !learnModeActive) {
-          // dieser Code-Block wird nur einmal durchlaufen da danach das Spiel gestartet ist - > gameNotStarted = false
-          // manualSetAtoms = false;
-          setAtoms();
-          console.log("Die zu ratenden Atome wurden vom Computer gesetzt.");
-        }
-        gameNotStarted = false; // das Spiel ist gestartet
-        document.getElementById("orbs").innerHTML = ""; // Anzeige Orb-Modus löschen
-        calculateBeam(); // Strahlenweg berechnen
-        break;
-      case mode.Set:
-        // Atom auf dem Experimentierfeld setzen oder löschen
-        if (!setAtomCursorBlocked) {
-          setAtomCursorBlocked = true; // bis zum loslassen der Enter-Taste weiteren Aufruf blockieren
-          if (gameNotStarted) {
-            toggleSetAtom(atomArray, atomExclamationMark);
-          } else {
-            toggleSetAtom(atomSetArray, atomQuestionMark);
-          }
-        }
-        break;
-      default:
-        console.log("KEY_ENTER down: Modus nicht definiert.");
-    }
+    treatEnterKeyPressed();
   }
 
   // Eingabe losgelassen auswerten
   if (!KEY_ENTER) {
-    switch (currentMode) {
-      case mode.Beam:
-        // Abfrage-Cursor wieder blau anzeigen
-        if (rimFree == true) {
-          questionMark = questionMarks[0];
-          document.getElementById(beamCursor).innerHTML = questionMark;
-        }
-        beamCursorBlocked = false; // Blockade des Abrage-Cursor aufheben
-        break;
-      case mode.Set:
-        setAtomCursorBlocked = false; // Blockade des Setz-Cursor aufheben
-        break;
-      default:
-        console.log("KEY_ENTER up: Modus nicht definiert.");
-    }
+    treatEnterKeyReleased();
   }
 
   if (KEY_CONTROL && !setCursorBlocked) {
@@ -1000,41 +857,241 @@ function gameLoop() {
   }
 
   // Statuszeile anzeigen
-  if (gameEndShow == false) {
-    gamestatus =
-      textAtoms +
-      atomsCnt +
-      space +
-      textTrials +
-      trials +
-      space +
-      textHits +
-      hits +
-      space +
-      textMissed +
-      wrong +
-      space +
-      textPoints +
-      score;
+  showStatusLine();
+}
+
+/***************************************
+ * Schaltet die gameLoop ab und
+ * die Möglichkeit der XRay-Anzeige ein
+ ***************************************/
+function treatGameEnd() {
+  // gameLoop beenden
+  clearInterval(gameLoopHandle);
+
+  clearKeyboardBuffer(); // alle Tasten löschen
+  soundActive = false; // damit nach dem Wechsel von XRay zurück zur Auswertung die Melodie nicht nochmal spielt
+  // Funktion zur Anzeige der Strahlenwerte nach der Auswertung scharf schalten
+  xRayHandle = setInterval(toogleXRay, 100);
+}
+
+/***************************************
+ * Schaltet die Soundeffekte an und aus
+ ***************************************/
+function treatSound() {
+  toogleSoundModeBlocked = true; // bis zum loslassen der S-Taste weiteren Aufruf blockieren
+  if (soundActive) {
+    soundActive = false;
+    document.getElementById("speaker").innerHTML = soundOff;
+    setTimeout(clearSoundField, 4000);
   } else {
-    gamestatus =
-      textAtoms +
-      atomsCnt +
-      space +
-      textTrials +
-      trials +
-      space +
-      textHits +
-      hits +
-      space +
-      textMissed +
-      wrong +
-      space +
-      textScore +
-      score;
-    gameEnd = true;
+    soundActive = true;
+    document.getElementById("speaker").innerHTML = soundOn;
+    setTimeout(clearSoundField, 4000);
   }
-  document.getElementById("status").innerHTML = gamestatus;
+  // Sound-Modus in Cookie schreiben
+  writeCookie("Sound", soundActive, 365);
+}
+
+/*************************************
+ * Schaltet den Lern-Modus an und aus
+ *************************************/
+function treatLearnMode() {
+  // Lern-Modus wenn Atome manuell gesetzt wurden
+  if (manualModusActive) {
+    toogleLearnModeBlocked = true; // bis zum loslassen der L-Taste weiteren Aufruf blockieren
+    console.log("Schalte Lern-Modus ein!");
+    resetParameters();
+    showAtoms();
+    document.getElementById("setcnt").innerHTML = atomLearn;
+    learnModeActive = true;
+  } else {
+    // der Lern-Modus kann nicht aktiviert werden wenn im Manual-Modus noch nicht alle Atome gesetzt wurden
+    if (!manualSetAtoms) {
+      if (KEY_L && !toogleLearnModeBlocked) {
+        toogleLearnModeBlocked = true; // bis zum loslassen der L-Taste weiteren Aufruf blockieren
+        if (learnModeActive) {
+          console.log("Schalte Lern-Modus aus!");
+          document.getElementById("setcnt").innerHTML = "";
+          learnModeActive = false;
+        } else {
+          console.log("Schalte Lern-Modus ein!");
+          document.getElementById("setcnt").innerHTML = atomLearn;
+          learnModeActive = true;
+        }
+        resetParameters();
+        setAtoms();
+        writeCookie("learnModeActive", learnModeActive, 360);
+      }
+    } else {
+      userErrorMessage(textAlert10);
+    }
+  }
+}
+
+/**********************************************
+ * Erhöht die Anzahl der zu ermittelnden Atome
+ **********************************************/
+function treatAtomInc() {
+  if (gameNotStarted) {
+    if (atomsCnt < atomsMaxCnt) {
+      ++atomsCnt;
+      setAtoms();
+    }
+    writeCookie("atomsCnt", atomsCnt, 360);
+  } else {
+    userErrorMessage(textAlert5);
+  }
+}
+
+/**************************************************
+ * Erniedrigt die Anzahl der zu ermittelnden Atome
+ **************************************************/
+function treatAtomDec() {
+  if (gameNotStarted) {
+    if (atomsCnt > atomsMinCnt) {
+      --atomsCnt;
+      setAtoms();
+    }
+    writeCookie("atomsCnt", atomsCnt, 360);
+  } else {
+    userErrorMessage(textAlert5);
+  }
+}
+
+/**************************************
+ * Bewegt den Beam oder den Set-Cursor
+ * nach rechts
+ **************************************/
+function treatCursorRight() {
+  switch (currentMode) {
+    case mode.Beam:
+      moveBeamCursorRight();
+      break;
+    case mode.Set:
+      if (gameNotStarted) {
+        moveSetCursorRight(atomArray, atomExclamationMark);
+      } else {
+        moveSetCursorRight(atomSetArray, atomQuestionMark);
+      }
+      break;
+    default:
+      console.log("treatCursorRight(): Modus currentMode nicht definiert.");
+  }
+}
+
+/**************************************
+ * Bewegt den Beam oder den Set-Cursor
+ * nach links
+ **************************************/
+function treatCursorLeft() {
+  switch (currentMode) {
+    case mode.Beam:
+      moveBeamCursorLeft();
+      break;
+    case mode.Set:
+      if (gameNotStarted) {
+        moveSetCursorLeft(atomArray, atomExclamationMark);
+      } else {
+        moveSetCursorLeft(atomSetArray, atomQuestionMark);
+      }
+      break;
+    default:
+      console.log("treatCursorLeft(): Modus nicht definiert.");
+  }
+}
+
+/**************************************
+ * Bewegt den Set-Cursor nach oben
+ **************************************/
+function treatCursorUp() {
+  switch (currentMode) {
+    case mode.Beam:
+      break;
+    case mode.Set:
+      if (gameNotStarted) {
+        moveSetCursorUp(atomArray, atomExclamationMark);
+      } else {
+        moveSetCursorUp(atomSetArray, atomQuestionMark);
+      }
+      break;
+    default:
+      console.log("treatCursorUp(): Modus nicht definiert.");
+  }
+}
+
+/**************************************
+ * Bewegt den Set-Cursor nach unten
+ **************************************/
+function treatCursorDown() {
+  switch (currentMode) {
+    case mode.Beam:
+      break;
+    case mode.Set:
+      if (gameNotStarted) {
+        moveSetCursorDown(atomArray, atomExclamationMark);
+      } else {
+        moveSetCursorDown(atomSetArray, atomQuestionMark);
+      }
+      break;
+    default:
+      console.log("treatCursorDown(): Modus nicht definiert.");
+  }
+}
+
+/*******************************************************
+ * Feuert einen Untersuchungsstrahl ab oder
+ * setzt oder löscht ein Atom auf dem Experimentierfeld
+ *******************************************************/
+function treatEnterKeyPressed() {
+  switch (currentMode) {
+    case mode.Beam:
+      // falls manuell keine Atome gesetzt wurden muss der Computer welche setzen
+      if (gameNotStarted && !manualModusActive && !learnModeActive) {
+        // dieser Code-Block wird nur einmal durchlaufen da danach das Spiel gestartet ist - > gameNotStarted = false
+        // manualSetAtoms = false;
+        setAtoms();
+        console.log("Die zu ratenden Atome wurden vom Computer gesetzt.");
+      }
+      gameNotStarted = false; // das Spiel ist gestartet
+      document.getElementById("orbs").innerHTML = ""; // Anzeige Orb-Modus löschen
+      calculateBeam(); // Strahlenweg berechnen
+      break;
+    case mode.Set:
+      // Atom auf dem Experimentierfeld setzen oder löschen
+      if (!setAtomCursorBlocked) {
+        setAtomCursorBlocked = true; // bis zum loslassen der Enter-Taste weiteren Aufruf blockieren
+        if (gameNotStarted) {
+          toggleSetAtom(atomArray, atomExclamationMark);
+        } else {
+          toggleSetAtom(atomSetArray, atomQuestionMark);
+        }
+      }
+      break;
+    default:
+      console.log("KEY_ENTER down: Modus nicht definiert.");
+  }
+}
+
+/****************************************************
+ * Kümmert sich nach dem Loslassen der Eingabe-Taste
+ * um den Status von Abfrage- und Setz-Cursor
+ ****************************************************/
+function treatEnterKeyReleased() {
+  switch (currentMode) {
+    case mode.Beam:
+      // Abfrage-Cursor wieder blau anzeigen
+      if (rimFree == true) {
+        questionMark = questionMarks[0];
+        document.getElementById(beamCursor).innerHTML = questionMark;
+      }
+      beamCursorBlocked = false; // Blockade des Abrage-Cursor aufheben
+      break;
+    case mode.Set:
+      setAtomCursorBlocked = false; // Blockade des Setz-Cursor aufheben
+      break;
+    default:
+      console.log("treatEnterKeyReleased(): Modus nicht definiert.");
+  }
 }
 
 /*****************************************
@@ -1175,6 +1232,13 @@ function initializeSound() {
     html5: true,
   });
 
+  manualSetCompletedSnd = new Howl({
+    src: ["snd/manualSetCompleted.mp3"],
+    volume: 0.5,
+    autoplay: false,
+    html5: true,
+  });
+
   soundInitialized = true;
   console.log("Sound-Modul wurde initialisiert.");
 }
@@ -1201,7 +1265,7 @@ function toggleOrbs() {
     writeCookie("orbsB", orbsB, 360);
   } else {
     // wenn Wechsel nicht mehr möglich Benutzer informieren
-    userMessage(textAlert6);
+    userErrorMessage(textAlert6);
   }
 }
 
@@ -1295,7 +1359,7 @@ function switchMode() {
         }
       } else {
         // im Lern-Modus können keine Atome gesetzt werden
-        userMessage(textAlert9);
+        userErrorMessage(textAlert9);
       }
       break;
 
@@ -1303,7 +1367,7 @@ function switchMode() {
       // wir sind im Modus Set und wechseln zum Modus Beam
       // falls zu ratende Atom gesetzt wurden (manualSetAtoms) dürfen wir nicht wechseln solange nicht alle Atome gesetzt wurden
       if (atomsCnt > setAtomsCnt && setAtomsCnt > 0 && manualSetAtoms) {
-        userMessage(textAlert7);
+        userErrorMessage(textAlert7);
       } else {
         currentMode = mode.Beam; // wir sind jetzt im Beam-Modus und merken uns das
 
@@ -1366,18 +1430,35 @@ function switchMode() {
 }
 
 /*************************************************
- * Gibt eine Nachricht an den Benutzer
- * über ein Fenster aus was mit einem
+ * Gibt eine Fehlernachricht an den Benutzer
+ * über ein Fenster aus welches mit einem
  * Ok-Button geschlossen wird.
  *
- * Stellt alle Tastatur-Eingaben
- * auf false
+ * Stellt alle Tastatur-Eingaben auf false
+ *
+ * @param {*} message  die auszugebende Nachricht
+ *************************************************/
+function userErrorMessage(message) {
+  if (soundActive) {
+    alertSnd.play();
+  }
+  window.alert(message);
+  clearKeyboardBuffer();
+}
+
+/*************************************************
+ * Gibt eine Nachricht an den Benutzer
+ * über ein Fenster aus welches mit einem
+ * Ok-Button geschlossen wird.
+ *
+ * Stellt alle Tastatur-Eingaben auf false
  *
  * @param {*} message  die auszugebende Nachricht
  *************************************************/
 function userMessage(message) {
   if (soundActive) {
-    alertSnd.play();
+    // alertSnd.play();
+    manualSetCompletedSnd.play();
   }
   window.alert(message);
   clearKeyboardBuffer();
@@ -1705,7 +1786,7 @@ function setAtomProbeField(atomArray) {
     ++setAtomsCnt;
     document.getElementById("setcnt").innerHTML = placedAtoms[setAtomsCnt];
   } else {
-    userMessage(textAlert3 + atomsCnt + textAlert4);
+    userErrorMessage(textAlert3 + atomsCnt + textAlert4);
   }
 }
 
@@ -2363,13 +2444,13 @@ function setBeamTile(beamContainer) {
 function calculateResult() {
   // Spieler informieren, dass die Auswertung im Lern-Modus nicht aktiv ist
   if (learnModeActive) {
-    userMessage(textAlert8);
+    userErrorMessage(textAlert8);
     return;
   }
 
   // Spieler informieren, dass vor der Auswertung erst alle Atome gesetzt sein müssen
   if (setAtomsCnt < atomsCnt) {
-    userMessage(textAlert1 + atomsCnt + textAlert2);
+    userErrorMessage(textAlert1 + atomsCnt + textAlert2);
     return;
   }
 
@@ -2418,6 +2499,47 @@ function calculateResult() {
 
   // Flag setzen dass das Spielende erreicht ist, aber noch einmal angezeigt werden soll
   gameEndShow = true;
+}
+
+/***************************
+ * Zeigt die Statuszeile an
+ ***************************/
+function showStatusLine() {
+  if (gameEndShow == false) {
+    gamestatus =
+      textAtoms +
+      atomsCnt +
+      space +
+      textTrials +
+      trials +
+      space +
+      textHits +
+      hits +
+      space +
+      textMissed +
+      wrong +
+      space +
+      textPoints +
+      score;
+  } else {
+    gamestatus =
+      textAtoms +
+      atomsCnt +
+      space +
+      textTrials +
+      trials +
+      space +
+      textHits +
+      hits +
+      space +
+      textMissed +
+      wrong +
+      space +
+      textScore +
+      score;
+    gameEnd = true;
+  }
+  document.getElementById("status").innerHTML = gamestatus;
 }
 
 /**********************************************************************
