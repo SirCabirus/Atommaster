@@ -830,7 +830,7 @@ function gameLoop() {
     treatCursorDown();
   }
 
-  // Eingabe auswerten
+  // Eingabe gedrückt auswerten
   if (KEY_ENTER) {
     treatEnterKeyPressed();
   }
@@ -2425,7 +2425,7 @@ function setBeamTile(beamContainer) {
         }
         break;
       default:
-        console.log("Unbeannter mode " + mode);
+        console.log("setBeamTile(): unbekannter mode " + mode);
         break;
     }
   }

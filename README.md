@@ -43,6 +43,7 @@ the Enter key again.
 
 If the CTRL key is pressed before a beam is fired, the atoms can be set manually.
 If all atoms have been set manually, they will be hidden when the CTRL key is pressed again.
+However, by pressing the L key, the atoms can be revealed again and the beam paths made visible.
 
 The E key is used to evaluate the game. The game field shows 
 - which atoms have been detected 
@@ -94,7 +95,8 @@ Ein gesetztes Atom wird gelöscht indem man den Cursor darauf plaziert
 und nochmals die Eingabe-Taste betätigt.
 
 Falls die STRG-Taste betätigt wird bevor ein Strahl abgefeuert wurde, können die Atome manuell gesetzt werden.
-Wenn alle Atome manuell gesetzt wurden werden diese beim erneuten Betätigen der STRG-Taste versteckt.
+Wenn alle Atome manuell gesetzt wurden werden diese beim erneuten Betätigen der STRG-Taste versteckt. 
+Durch die L-Taste können die Atome aber wieder aufgedeckt und die Strahlenwege sichtbar gemacht werden.
 
 Über die E-Taste erfolgt die Auswertung des Spiels. Auf dem Spielfeld wird angezeigt, 
 - welche Atome ermittelt wurden
