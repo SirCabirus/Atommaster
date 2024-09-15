@@ -1,15 +1,21 @@
-/******************************************/
-/*              Atommaster                */
-/*                                        */
-/* Umsetzung des Brettspiels ORDO         */
-/* welches auch als Black Box bekannt ist */
-/*                                        */
-/* Version 6.0                            */
-/* 20.08.2022                             */
-/*                                        */
-/* Frank Wolter                           */
-/*                                        */
-/******************************************/
+/****************************************************************************/
+/*              Atommaster                                                  */
+/*                                                                          */
+/* Umsetzung des Brettspiels ORDO                                           */
+/* welches auch als Black Box bekannt ist                                   */
+/*                                                                          */
+/* Version 6.0                                                              */
+/* 20.08.2022                                                               */
+/*                                                                          */
+/* Anleitung:                                                               */
+/* https://github.com/SirCabirus/Atommaster/blob/main/doc/AtommasterDEU.pdf */
+/*                                                                          */
+/* Spielen:                                                                 */
+/* https://sircabirus.github.io/Atommaster/                                 */
+/*                                                                          */
+/* Frank Wolter                                                             */
+/*                                                                          */
+/****************************************************************************/
 
 /**************************************/
 /* Globale Variablen und Konstanten   */
@@ -704,10 +710,10 @@ function restoreGameParameter() {
 }
 
 /*************************************************************
- * sucht im übergebenen <cookieString> nach den Namen <cname>
+ * sucht im übergebenen cookieString nach den Namen cname
  * und gibt den Wert dafür zurück.
  *
- * der <cookieString> ist eine Zeichenkette mit dem Aufbau
+ * der cookieString ist eine Zeichenkette mit dem Aufbau
  * "name1=wert1; name2=wert2; ... nameX=wertX"
  *
  * Wenn der Name nicht gefunden wird, wird null zurückgegeben
